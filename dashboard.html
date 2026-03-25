@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Kappo Tracking</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #FFFFFF;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        /* Barra Lateral */
+        .sidebar {
+            width: 280px;
+            background-color: #1E1E1E;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .sidebar h2 { color: #FF8C00; font-size: 20px; margin-bottom: 30px; }
+        
+        .bike-card {
+            background: #2D2D2D;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #FF8C00;
+            margin-bottom: 15px;
+        }
+        .status { color: #00FF00; font-size: 12px; font-weight: bold; }
+        
+        /* Área do Mapa (Simulada) */
+        .main-content {
+            flex-grow: 1;
+            position: relative;
+            background: #1a1a1a url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/-45.0711,-23.4332,13,0/800x600?access_token=Sua_Chave_Aqui') no-repeat center;
+            background-size: cover;
+        }
+        .overlay-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            border: 1px solid #444;
+        }
+        .btn-alert {
+            background: #FF8C00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Kappo Tracking</h2>
+        <div class="bike-card">
+            <strong>E-Bike #01 - Karice</strong>
+            <div class="status">● ONLINE</div>
+            <p style="font-size: 12px; color: #aaa;">Último sinal: Agora mesmo</p>
+        </div>
+        <div style="margin-top: auto; color: #666; font-size: 12px;">
+            Ubatuba, SP - 2026
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="overlay-info">
+            <div style="font-size: 14px; margin-bottom: 5px;">Velocidade: 0 km/h</div>
+            <div style="font-size: 14px;">Bateria: 85%</div>
+            <button class="btn-alert">BLOQUEAR MOTOR</button>
+        </div>
+    </div>
+</body>
+</html>
