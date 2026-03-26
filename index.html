@@ -20,6 +20,7 @@
             --text: #FFFFFF;
             --muted: #6B6B7A;
             --success: #00E07A;
+            --red: #FF3B3B;
         }
 
         body {
@@ -213,6 +214,18 @@
         .footer { margin-top: 32px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
         .footer span { color: rgba(255,140,0,0.5); }
 
+        /* Erro UI */
+        #errorMsg {
+            background: rgba(255, 59, 59, 0.15);
+            color: var(--red);
+            border: 1px solid rgba(255, 59, 59, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
         /* Status bar */
         .status-bar {
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
@@ -231,7 +244,6 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
-    <!-- Left panel - desktop only -->
     <div class="left-panel">
         <div class="brand">
             <div class="brand-logo">
@@ -292,10 +304,8 @@
         </div>
     </div>
 
-    <!-- Right panel - login -->
     <div class="right-panel">
         <div class="login-card">
-            <!-- Mobile brand -->
             <div class="mobile-brand">
                 <div class="brand-icon">
                     <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:#000"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
@@ -308,6 +318,8 @@
                 <div class="form-title">Bem-vindo de volta</div>
                 <div class="form-subtitle">Acesse o painel de monitoramento da sua e-bike</div>
             </div>
+
+            <div id="errorMsg"></div>
 
             <div class="form-group">
                 <label class="form-label">Usuário</label>
@@ -371,17 +383,60 @@
     </div>
 
     <script>
+        // Configuração do endereço do servidor Traccar (pode ser o IP do seu VPS)
+        const TRACCAR_URL = 'http://localhost:8082'; 
+
         function togglePass() {
             const input = document.getElementById('pass');
             input.type = input.type === 'password' ? 'text' : 'password';
         }
-        function doLogin() {
+
+        // --- Lógica de Login Modificada ---
+        async function doLogin() {
             const btn = document.querySelector('.btn-submit');
+            const errorDiv = document.getElementById('errorMsg');
+            
+            const email = document.getElementById('user').value;
+            const password = document.getElementById('pass').value;
+
+            errorDiv.style.display = 'none'; // Esconde erros anteriores
             btn.textContent = 'Autenticando...';
-            btn.style.opacity = '0.7';
-            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+            btn.disabled = true;
+
+            try {
+                // Prepara os dados no formato URL-encoded que o Traccar espera para sessões
+                const formData = new URLSearchParams();
+                formData.append('email', email);
+                formData.append('password', password);
+
+                // Faz a requisição HTTP POST para o endpoint /api/session do Traccar
+                const response = await fetch(`${TRACCAR_URL}/api/session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    
+                    // Salvamos os dados do usuário no LocalStorage para uso no Dashboard
+                    localStorage.setItem('kappo_user', JSON.stringify(userData));
+                    
+                    // Redireciona para o painel de rastreamento
+                    window.location.href = 'dashboard.html';
+                } else {
+                    throw new Error('Falha no login. Verifique e-mail e senha.');
+                }
+            } catch (error) {
+                // Exibe o erro visualmente no formulário
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+                btn.textContent = 'Acessar Monitoramento';
+                btn.disabled = false;
+            }
         }
-        // Stagger feature items
+
+        // Animação dos itens
         document.querySelectorAll('.feature-item').forEach((el, i) => {
             el.style.animation = `slideUp 0.5s ${0.1 + i * 0.08}s both`;
         });

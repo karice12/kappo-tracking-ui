@@ -154,7 +154,7 @@
         .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; color: var(--orange); }
 
         /* History */
-        .history { padding: 16px; flex: 1; }
+        .history { padding: 16px; flex: 1; overflow-y: auto; }
         .history-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
         .hist-item {
             display: flex; align-items: center; gap: 10px;
@@ -236,13 +236,11 @@
         .leaflet-control-zoom a:hover { color: var(--orange) !important; }
 
         /* Body locked state */
-        body.locked { }
         body.locked #map { filter: grayscale(0.8) sepia(0.4) hue-rotate(-30deg); }
     </style>
 </head>
 <body id="mainBody">
 
-    <!-- TOP NAV -->
     <nav class="topnav">
         <button class="nav-btn menu-btn" onclick="toggleSidebar()" title="Menu">
             <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
@@ -259,7 +257,7 @@
         <div class="topnav-spacer"></div>
         <div class="nav-status" id="navStatus">
             <div class="status-dot" id="navDot"></div>
-            <span class="status-label" id="navLabel">Monitoramento ativo</span>
+            <span class="status-label" id="navLabel">Conectando...</span>
         </div>
         <button class="nav-btn" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -269,14 +267,10 @@
         </button>
     </nav>
 
-    <!-- LAYOUT -->
     <div class="layout">
-        <!-- Overlay for mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-        <!-- SIDEBAR -->
         <aside class="sidebar closed" id="sidebar">
-            <!-- Bike card -->
             <div class="bike-card">
                 <div class="bike-photo">
                     <div class="bike-badge">ST-901 4G</div>
@@ -284,7 +278,7 @@
                 <div class="bike-name">E-Bike Karice #01</div>
                 <div class="pill pill-green" id="statusPill">
                     <div class="pill-dot"></div>
-                    Monitoramento Ativo
+                    Carregando...
                 </div>
                 <div class="detail-grid">
                     <div class="detail-box">
@@ -297,31 +291,29 @@
                     </div>
                     <div class="detail-box">
                         <div class="detail-box-label">ID Local</div>
-                        <div class="detail-box-value">7654321</div>
+                        <div class="detail-box-value" id="idDevice">#</div>
                     </div>
                     <div class="detail-box">
                         <div class="detail-box-label">Bateria</div>
-                        <div class="detail-box-value">87%</div>
+                        <div class="detail-box-value" id="sideBatery">-%</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Controls -->
             <div class="controls">
                 <div class="controls-title">Controle Remoto</div>
                 <div class="btn-row">
-                    <button class="ctrl-btn btn-lock" onclick="setLocked(true)">
+                    <button class="ctrl-btn btn-lock" onclick="sendCommandToBike('engineStop')">
                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         Bloquear
                     </button>
-                    <button class="ctrl-btn btn-unlock" onclick="setLocked(false)">
+                    <button class="ctrl-btn btn-unlock" onclick="sendCommandToBike('engineResume')">
                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
                         Liberar
                     </button>
                 </div>
             </div>
 
-            <!-- Stats strip -->
             <div class="stats-strip">
                 <div class="stat-item">
                     <span class="stat-label">Velocidade atual</span>
@@ -329,40 +321,23 @@
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Distância hoje</span>
-                    <span class="stat-value">12.4 km</span>
+                    <span class="stat-value" id="sideDistance">0 km</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Sinal GPS</span>
-                    <span class="stat-value" style="color:var(--green)">Forte</span>
+                    <span class="stat-value" id="sideSignal" style="color:var(--orange)">Buscando</span>
                 </div>
             </div>
 
-            <!-- History -->
             <div class="history">
                 <div class="history-title">🕒 Histórico de Locais</div>
-                <div class="hist-item">
-                    <div class="hist-dot recent"></div>
-                    <div class="hist-name">Orla Itaguá</div>
-                    <div class="hist-time">10:45</div>
-                </div>
-                <div class="hist-item">
-                    <div class="hist-dot"></div>
-                    <div class="hist-name">Centro – Itaú</div>
-                    <div class="hist-time">09:20</div>
-                </div>
-                <div class="hist-item">
-                    <div class="hist-dot"></div>
-                    <div class="hist-name">Praia do Perequê</div>
-                    <div class="hist-time">08:05</div>
-                </div>
+                <div id="historyList"></div>
             </div>
         </aside>
 
-        <!-- MAP AREA -->
         <div class="map-area">
             <div id="map"></div>
 
-            <!-- Lock overlay -->
             <div class="lock-overlay" id="lockOverlay">
                 <div class="lock-icon">
                     <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -371,7 +346,6 @@
                 <div class="lock-sub">E-Bike imobilizada remotamente</div>
             </div>
 
-            <!-- Speed widget - desktop only -->
             <div class="speed-widget" id="speedWidget">
                 <div class="speed-label">Velocidade</div>
                 <div class="speed-value" id="speedVal">0</div>
@@ -379,28 +353,31 @@
                 <div class="speed-bar"><div class="speed-bar-fill" id="speedBar"></div></div>
             </div>
 
-            <!-- Coordinates chip -->
             <div class="coord-chip" id="coordChip">
-                <span>-23.4332</span>, <span>-45.0711</span>
+                <span id="coordLat">-23.4332</span>, <span id="coordLng">-45.0711</span>
             </div>
         </div>
     </div>
 
-    <!-- MOBILE BOTTOM BAR -->
     <div class="mobile-bottombar">
         <div class="mbb-speed">
             <div class="mbb-speed-label">Velocidade</div>
             <div class="mbb-speed-val" id="mbbSpeed">0 km/h</div>
         </div>
         <div class="mbb-btns">
-            <button class="mbb-btn mbb-lock" onclick="setLocked(true)">🔒 Bloquear</button>
-            <button class="mbb-btn mbb-unlock" onclick="setLocked(false)">🔓 Liberar</button>
+            <button class="mbb-btn mbb-lock" onclick="sendCommandToBike('engineStop')">🔒 Bloquear</button>
+            <button class="mbb-btn mbb-unlock" onclick="sendCommandToBike('engineResume')">🔓 Liberar</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ─── SIDEBAR TOGGLE ───
+        const TRACCAR_URL = 'http://localhost:8082'; // Altere para seu IP VPS
+        const TRACCAR_WS = 'ws://localhost:8082/api/socket'; // O Socket do traccar
+
+        let deviceId = null; // Guardará o ID do veículo rastreado no Traccar
+
+        // ─── LÓGICA DE GAVETA (SIDEBAR) ───
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebarOverlay');
@@ -409,23 +386,19 @@
             setTimeout(() => map.invalidateSize(), 360);
         }
 
-        // Auto-open sidebar on desktop
         function handleResize() {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebarOverlay');
             if (window.innerWidth >= 900) {
                 sb.classList.remove('closed');
                 ov.classList.remove('visible');
-            } else {
-                if (!sb.classList.contains('closed')) {
-                    // keep as is
-                }
             }
             map.invalidateSize();
         }
         window.addEventListener('resize', handleResize);
 
-        // ─── MAP ───
+
+        // ─── CONFIGURAÇÃO DO MAPA ───
         var map = L.map('map', { zoomControl: true }).setView([-23.4332, -45.0711], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '© CartoDB',
@@ -447,13 +420,21 @@
 
         var marker = L.marker([-23.4332, -45.0711], { icon: makeIcon('#FF8C00') }).addTo(map);
         var polyline = L.polyline([], { color: '#FF8C00', opacity: 0.4, weight: 2, dashArray: '6,8' }).addTo(map);
-        var trail = [[-23.4332, -45.0711]];
+        var trail = [];
 
-        // ─── LOCK STATE ───
-        var isLocked = false;
 
-        function setLocked(lock) {
-            isLocked = lock;
+        // ─── ATUALIZAR VELOCIDADE VISUAL ───
+        function updateSpeedUI(kmh) {
+            const speed = Math.round(kmh);
+            document.getElementById('speedVal').textContent = speed;
+            document.getElementById('mbbSpeed').textContent = speed + ' km/h';
+            document.getElementById('sideSpeed').textContent = speed + ' km/h';
+            document.getElementById('speedBar').style.width = Math.min(speed / 40 * 100, 100) + '%';
+        }
+
+
+        // ─── MUDAR UI QUANDO BLOQUEADO ───
+        function setLockedUI(lock) {
             const body = document.getElementById('mainBody');
             const pill = document.getElementById('statusPill');
             const navDot = document.getElementById('navDot');
@@ -469,7 +450,7 @@
                 navLabel.className = 'status-label locked';
                 overlay.classList.add('visible');
                 marker.setIcon(makeIcon('#FF3B3B'));
-                updateSpeed(0);
+                updateSpeedUI(0);
             } else {
                 body.classList.remove('locked');
                 pill.className = 'pill pill-green';
@@ -482,38 +463,148 @@
             }
         }
 
-        // ─── SPEED / POSITION SIMULATION ───
-        function updateSpeed(kmh) {
-            document.getElementById('speedVal').textContent = kmh;
-            document.getElementById('mbbSpeed').textContent = kmh + ' km/h';
-            document.getElementById('sideSpeed').textContent = kmh + ' km/h';
-            document.getElementById('speedBar').style.width = Math.min(kmh / 40 * 100, 100) + '%';
+
+        // ─── WEBSOCKET (REAL-TIME) ───
+        function startWebSocket() {
+            const ws = new WebSocket(TRACCAR_WS);
+
+            ws.onopen = () => {
+                document.getElementById('navLabel').textContent = 'Monitoramento ativo';
+                document.getElementById('sideSignal').textContent = 'Forte';
+                document.getElementById('sideSignal').style.color = 'var(--green)';
+                
+                // Puxa histórico de posições assim que conecta
+                loadHistory();
+            };
+
+            ws.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+
+                // Se houver dados de posições disparados pelo rastreador
+                if (data.positions && data.positions.length > 0) {
+                    const pos = data.positions[data.positions.length - 1]; // pega o mais recente
+                    
+                    // Atualiza coordenadas no Chip e Mapa
+                    document.getElementById('coordLat').textContent = pos.latitude.toFixed(4);
+                    document.getElementById('coordLng').textContent = pos.longitude.toFixed(4);
+                    
+                    const latlng = [pos.latitude, pos.longitude];
+                    marker.setLatLng(latlng);
+                    map.panTo(latlng);
+
+                    // Desenha a linha da esteira de rastro
+                    trail.push(latlng);
+                    if (trail.length > 20) trail.shift();
+                    polyline.setLatLngs(trail);
+
+                    // Atualiza velocidade
+                    const speedKmh = pos.speed * 1.852; // Converte nós náuticos do GPS para km/h
+                    updateSpeedUI(speedKmh);
+
+                    // Bateria (Geralmente no attributes do Traccar)
+                    if (pos.attributes && pos.attributes.batteryLevel) {
+                        document.getElementById('sideBatery').textContent = pos.attributes.batteryLevel + '%';
+                    }
+                }
+
+                // Se houver dados de aparelhos
+                if (data.devices && data.devices.length > 0) {
+                    const dev = data.devices[0];
+                    deviceId = dev.id; // salva o ID para os comandos
+                    document.getElementById('idDevice').textContent = dev.id;
+                }
+            };
+
+            ws.onerror = () => {
+                document.getElementById('navLabel').textContent = 'Erro na conexão';
+                document.getElementById('sideSignal').textContent = 'Erro';
+            };
+
+            ws.onclose = () => {
+                document.getElementById('navLabel').textContent = 'Desconectado';
+                // Tenta reconectar a cada 5 segundos se cair
+                setTimeout(startWebSocket, 5000); 
+            };
         }
 
-        function simulate() {
-            if (!isLocked) {
-                const lat = -23.4332 + (Math.random() - 0.5) * 0.003;
-                const lng = -45.0711 + (Math.random() - 0.5) * 0.003;
-                const speed = Math.floor(Math.random() * 28 + 3);
 
-                marker.setLatLng([lat, lng]);
-                updateSpeed(speed);
-
-                trail.push([lat, lng]);
-                if (trail.length > 12) trail.shift();
-                polyline.setLatLngs(trail);
-
-                document.getElementById('coordChip').innerHTML =
-                    `<span>${lat.toFixed(4)}</span>, <span>${lng.toFixed(4)}</span>`;
-            } else {
-                updateSpeed(0);
+        // ─── REVERSE GEOCODING (NOMINATIM) ───
+        async function getAddressName(lat, lng) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await response.json();
+                return data.display_name.split(',')[0]; // Pega a rua / lugar primário
+            } catch {
+                return "Rua de Ubatuba";
             }
-            setTimeout(simulate, 3000);
         }
-        simulate();
 
-        // Init layout
+
+        // ─── HISTÓRICO DE LUGARES ───
+        async function loadHistory() {
+            if (!deviceId) return;
+            try {
+                const response = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`);
+                const positions = await response.json();
+                
+                const histList = document.getElementById('historyList');
+                histList.innerHTML = ''; // limpa o padrão estático
+
+                // Pega as últimas 3 posições e converte em nome de rua
+                const top3 = positions.slice(-3).reverse();
+
+                for (let i = 0; i < top3.length; i++) {
+                    const p = top3[i];
+                    const streetName = await getAddressName(p.latitude, p.longitude);
+                    const time = new Date(p.fixTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    histList.innerHTML += `
+                        <div class="hist-item">
+                            <div class="hist-dot ${i === 0 ? 'recent' : ''}"></div>
+                            <div class="hist-name">${streetName}</div>
+                            <div class="hist-time">${time}</div>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.log("Erro ao carregar histórico");
+            }
+        }
+
+
+        // ─── CONTROLE REMOTO (DISPARAR COMANDO) ───
+        async function sendCommandToBike(type) {
+            if (!deviceId) {
+                alert("Aparelho não sincronizado!");
+                return;
+            }
+
+            // Ativa o bloqueio visual imediatamente (Experiência de Usuário responsiva)
+            setLockedUI(type === 'engineStop');
+
+            try {
+                // Monta a requisição padrão do Traccar para comandos de hardware
+                const response = await fetch(`${TRACCAR_URL}/api/commands/send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        deviceId: deviceId,
+                        type: type // 'engineStop' (Desliga) ou 'engineResume' (Religa)
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Não foi possível enviar comando ao rastreador.");
+                }
+            } catch (error) {
+                alert(error.message);
+                setLockedUI(false); // desfaz a tela travada se deu erro real na API
+            }
+        }
+
+        // --- Inicializar as funções ao carregar a página ---
         handleResize();
+        startWebSocket();
     </script>
 </body>
 </html>
