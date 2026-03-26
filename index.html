@@ -383,15 +383,14 @@
     </div>
 
     <script>
-        // Configuração do endereço do servidor Traccar (IP do seu VPS na Amazon)
-        const TRACCAR_URL = 'http://18.219.60.19:8082'; 
+        // Configuração para o seu domínio seguro da Kappo Tracking
+        const TRACCAR_URL = 'https://api.kappotracking.com.br'; 
 
         function togglePass() {
             const input = document.getElementById('pass');
             input.type = input.type === 'password' ? 'text' : 'password';
         }
 
-        // --- Lógica de Login Modificada ---
         async function doLogin() {
             const btn = document.querySelector('.btn-submit');
             const errorDiv = document.getElementById('errorMsg');
@@ -399,17 +398,15 @@
             const email = document.getElementById('user').value;
             const password = document.getElementById('pass').value;
 
-            errorDiv.style.display = 'none'; // Esconde erros anteriores
+            errorDiv.style.display = 'none';
             btn.textContent = 'Autenticando...';
             btn.disabled = true;
 
             try {
-                // Prepara os dados no formato URL-encoded que o Traccar espera para sessões
                 const formData = new URLSearchParams();
                 formData.append('email', email);
                 formData.append('password', password);
 
-                // Faz a requisição HTTP POST para o endpoint /api/session do Traccar
                 const response = await fetch(`${TRACCAR_URL}/api/session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -418,17 +415,12 @@
 
                 if (response.ok) {
                     const userData = await response.json();
-                    
-                    // Salvamos os dados do usuário no LocalStorage para uso no Dashboard
                     localStorage.setItem('kappo_user', JSON.stringify(userData));
-                    
-                    // Redireciona para o painel de rastreamento
                     window.location.href = 'dashboard.html';
                 } else {
                     throw new Error('Falha no login. Verifique e-mail e senha.');
                 }
             } catch (error) {
-                // Exibe o erro visualmente no formulário
                 errorDiv.textContent = error.message;
                 errorDiv.style.display = 'block';
                 btn.textContent = 'Acessar Monitoramento';
@@ -436,7 +428,6 @@
             }
         }
 
-        // Animação dos itens
         document.querySelectorAll('.feature-item').forEach((el, i) => {
             el.style.animation = `slideUp 0.5s ${0.1 + i * 0.08}s both`;
         });
