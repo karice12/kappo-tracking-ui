@@ -3,163 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Real-Time | Kappo Tracking</title>
-    
+    <title>Kappo Tracking | Painel de Controle</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        body {
-            background-color: #121212;
-            color: #FFFFFF;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        /* Barra Lateral */
-        .sidebar {
-            width: 320px;
-            background-color: #1E1E1E;
-            border-right: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            z-index: 1000; /* Fica por cima do mapa */
-        }
-        .sidebar h2 { color: #FF8C00; font-size: 18px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
+        body { background-color: #121212; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 320px; background-color: #1E1E1E; border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; z-index: 1000; overflow-y: auto; }
+        .bike-card { background: #2D2D2D; padding: 15px; border-radius: 12px; border-left: 5px solid #FF8C00; margin-bottom: 20px; }
+        .status-pill { background: #00FF0033; color: #00FF00; padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
         
-        .bike-card {
-            background: #2D2D2D;
-            padding: 15px;
-            border-radius: 12px;
-            border-left: 5px solid #FF8C00;
-            margin-bottom: 20px;
-        }
-        .status { color: #00FF00; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
-        
-        /* Área do Mapa - Agora ocupa a tela toda atrás da sidebar */
-        #map {
-            flex-grow: 1;
-            height: 100vh;
-            background: #1a1a1a;
-        }
+        /* Estilo da Aba de Histórico */
+        .history-section { margin-top: 20px; border-top: 1px solid #333; pt-4; }
+        .history-title { font-size: 12px; color: #FF8C00; font-weight: bold; margin: 15px 0 10px 0; text-transform: uppercase; }
+        .history-item { font-size: 11px; padding: 10px; border-bottom: 1px solid #2a2a2a; color: #ccc; display: flex; justify-content: space-between; }
+        .history-item:last-child { border: none; }
+        .history-time { color: #888; font-weight: normal; }
 
-        .overlay-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(30, 30, 30, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid #444;
-            width: 200px;
-            z-index: 1000;
-        }
-        .btn-alert {
-            background: #FF8C00;
-            color: black;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 900;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-        }
+        #map { flex-grow: 1; height: 100vh; }
+        .overlay-info { position: absolute; top: 20px; right: 20px; background: rgba(30, 30, 30, 0.9); padding: 20px; border-radius: 15px; border: 1px solid #444; width: 200px; z-index: 1000; text-align: center; }
+        
+        /* Botões de Comando */
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 11px; transition: 0.3s; text-transform: uppercase; }
+        .btn-lock { background: #FF4444; color: white; }
+        .btn-unlock { background: #00e054; color: black; }
+        .btn:hover { opacity: 0.8; transform: scale(1.02); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2>Kappo Tracking</h2>
+        <h2 style="color: #FF8C00; margin-top: 0;">Kappo Tracking</h2>
         
         <div class="bike-card">
-            <div class="status">● MONITORANDO AGORA</div>
-            <strong>E-Bike #01 - Karice</strong>
-            <p style="font-size: 12px; color: #aaa; margin: 5px 0;">ID: 7654321</p>
+            <div class="status-pill">● SISTEMA ATIVO</div>
+            <div style="font-weight: bold;">E-Bike Karice #01</div>
+            <div style="font-size: 12px; color: #888;">Hardware: ST-901 4G</div>
         </div>
 
-        <div style="margin-top: auto; color: #555; font-size: 11px; text-align: center;">
-            <p>Ubatuba, SP - 2026</p>
-            <p>Conectado ao Traccar Custom</p>
+        <div class="history-section">
+            <div class="history-title">🕒 Histórico Recente (3 dias)</div>
+            <div id="history-list">
+                </div>
+        </div>
+
+        <div style="margin-top: auto; font-size: 10px; color: #555; text-align: center; padding-top: 20px;">
+            UBATUBA/SP - MONITORAMENTO REAL-TIME
         </div>
     </div>
 
     <div id="map"></div>
 
     <div class="overlay-info">
-        <div style="font-size: 12px; color: #888; margin-bottom: 10px;">TELEMETRIA</div>
-        <div id="speed" style="font-size: 16px; margin-bottom: 8px;">🚀 <strong>0 km/h</strong></div>
-        <div id="battery" style="font-size: 16px;">🔋 <strong>-- %</strong></div>
-        <button class="btn-alert" onclick="enviarBloqueio()">BLOQUEAR MOTOR</button>
+        <div style="font-size: 11px; color: #888; margin-bottom: 5px;">VELOCIDADE ATUAL</div>
+        <div id="speed" style="font-size: 24px; font-weight: bold; color: #FF8C00;">0 km/h</div>
+        <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
+        
+        <div class="btn-group">
+            <button class="btn btn-lock" onclick="comando('BLOQUEIO')">Bloquear</button>
+            <button class="btn btn-unlock" onclick="comando('DESBLOQUEIO')">Liberar</button>
+        </div>
+        <p style="font-size: 9px; color: #666; margin-top: 10px;">Comandos via GPRS/SMS</p>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    // --- CONFIGURAÇÕES DA KAPPO (Ajuste aqui) ---
-    const TRACCAR_URL = "SEU_IP_AQUI:8082"; // Ex: 192.168.1.10:8082
-    const USER_TOKEN = "SEU_TOKEN_AQUI";    // Gerado no seu perfil do Traccar
-    // --------------------------------------------
+    <script>
+        var map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-    // 1. Inicializar o mapa focado em Ubatuba
-    var map = L.map('map').setView([-23.4332, -45.0711], 14);
+        var bikeIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:#FF8C00; height:16px; width:16px; border-radius:50%; border:2px solid white; box-shadow: 0 0 15px #FF8C00;'></div>",
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+        });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+        var marker = L.marker([-23.4332, -45.0711], {icon: bikeIcon}).addTo(map);
 
-    // Criar o ícone da Moto/E-bike
-    var bikeMarker = L.marker([-23.4332, -45.0711]).addTo(map)
-        .bindPopup('<b>Kappo Tracking</b><br>Buscando sinal GPS...');
+        // --- LÓGICA DE HISTÓRICO E SIMULAÇÃO ---
+        const locaisUbatuba = ["Praia do Itaguá", "Orla do Cruzeiro", "Perequê-Açú", "Rua das Flores", "Av. Iperoig"];
+        
+        function adicionarAoHistorico() {
+            const lista = document.getElementById('history-list');
+            const agora = new Date();
+            const hora = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0');
+            const local = locaisUbatuba[Math.floor(Math.random() * locaisUbatuba.length)];
 
-    // 2. CONEXÃO WEBSOCKET (A Mágica acontece aqui)
-    function conectarTraccar() {
-        // Usamos a lógica do traccar-custom que você encontrou!
-        const socket = new WebSocket(`ws://${TRACCAR_URL}/api/socket?token=${USER_TOKEN}`);
+            // Criar o item de histórico
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>${local}</span> <span class="history-time">${hora}</span>`;
 
-        socket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
+            // Adiciona no topo da lista
+            lista.prepend(item);
 
-            // Se o servidor mandou uma nova posição...
-            if (data.positions) {
-                const pos = data.positions[0]; // Pega a posição mais recente
-                const novaLat = pos.latitude;
-                const novaLng = pos.longitude;
-                const velocidade = Math.round(pos.speed * 1.852); // Converte nós para km/h
-
-                // Move o marcador no mapa suavemente
-                bikeMarker.setLatLng([novaLat, novaLng]);
-                
-                // Atualiza a velocidade na tela
-                document.getElementById('speed').innerHTML = `🚀 <strong>${velocidade} km/h</strong>`;
-                
-                // Centraliza o mapa no veículo (Opcional)
-                // map.panTo([novaLat, novaLng]);
+            // Simulação de limite: Se tiver mais de 5 itens no protótipo, apaga o último
+            // No sistema real, faríamos a checagem por DATA (3 dias)
+            if (lista.children.length > 5) {
+                lista.removeChild(lista.lastChild);
             }
-        };
-
-        socket.onerror = function(error) {
-            console.log("Erro na conexão: ", error);
-        };
-
-        socket.onclose = function() {
-            console.log("Conexão encerrada. Tentando reconectar em 5s...");
-            setTimeout(conectarTraccar, 5000);
-        };
-    }
-
-    // Iniciar conexão
-    conectarTraccar();
-
-    function enviarBloqueio() {
-        const confirmar = confirm("ENVIAR BLOQUEIO? A moto parará imediatamente.");
-        if(confirmar) {
-            // Aqui futuramente chamaremos a API de comandos (POST /api/commands/send)
-            alert("Comando de Bloqueio enviado para o ST-901!");
         }
-    }
-</script>
+
+        function simular() {
+            let lat = -23.4332 + (Math.random() - 0.5) * 0.005;
+            let lng = -45.0711 + (Math.random() - 0.5) * 0.005;
+            let speed = Math.floor(Math.random() * 40);
+
+            marker.setLatLng([lat, lng]);
+            document.getElementById('speed').innerHTML = `${speed} km/h`;
+            
+            // Adiciona um ponto no histórico a cada 10 segundos
+            adicionarAoHistorico();
+
+            setTimeout(simular, 10000); 
+        }
+
+        function comando(tipo) {
+            alert(`ENVIANDO COMANDO DE ${tipo}...\nStatus: Sucesso via Protocolo SinoTrack.`);
+        }
+
+        simular();
+    </script>
 </body>
 </html>
