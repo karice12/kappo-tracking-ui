@@ -97,28 +97,69 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // 1. Inicializar o mapa focado em Ubatuba
-        // Coordenadas de Ubatuba: -23.4332, -45.0711
-        var map = L.map('map').setView([-23.4332, -45.0711], 14);
+<script>
+    // --- CONFIGURAÇÕES DA KAPPO (Ajuste aqui) ---
+    const TRACCAR_URL = "SEU_IP_AQUI:8082"; // Ex: 192.168.1.10:8082
+    const USER_TOKEN = "SEU_TOKEN_AQUI";    // Gerado no seu perfil do Traccar
+    // --------------------------------------------
 
-        // 2. Adicionar o visual do mapa (Estilo Dark para combinar com a Kappo)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+    // 1. Inicializar o mapa focado em Ubatuba
+    var map = L.map('map').setView([-23.4332, -45.0711], 14);
 
-        // 3. Adicionar um marcador (representando a sua E-bike)
-        var bikeMarker = L.marker([-23.4332, -45.0711]).addTo(map)
-            .bindPopup('<b>Kappo Tracking</b><br>Sua E-Bike está aqui.')
-            .openPopup();
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-        // Função do botão de bloqueio (Marketing: passa segurança para o cliente)
-        function enviarBloqueio() {
-            const confirmar = confirm("Deseja enviar o comando de BLOQUEIO para o ST-901?");
-            if(confirmar) {
-                alert("Comando enviado com sucesso via protocolo H02!");
+    // Criar o ícone da Moto/E-bike
+    var bikeMarker = L.marker([-23.4332, -45.0711]).addTo(map)
+        .bindPopup('<b>Kappo Tracking</b><br>Buscando sinal GPS...');
+
+    // 2. CONEXÃO WEBSOCKET (A Mágica acontece aqui)
+    function conectarTraccar() {
+        // Usamos a lógica do traccar-custom que você encontrou!
+        const socket = new WebSocket(`ws://${TRACCAR_URL}/api/socket?token=${USER_TOKEN}`);
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            // Se o servidor mandou uma nova posição...
+            if (data.positions) {
+                const pos = data.positions[0]; // Pega a posição mais recente
+                const novaLat = pos.latitude;
+                const novaLng = pos.longitude;
+                const velocidade = Math.round(pos.speed * 1.852); // Converte nós para km/h
+
+                // Move o marcador no mapa suavemente
+                bikeMarker.setLatLng([novaLat, novaLng]);
+                
+                // Atualiza a velocidade na tela
+                document.getElementById('speed').innerHTML = `🚀 <strong>${velocidade} km/h</strong>`;
+                
+                // Centraliza o mapa no veículo (Opcional)
+                // map.panTo([novaLat, novaLng]);
             }
+        };
+
+        socket.onerror = function(error) {
+            console.log("Erro na conexão: ", error);
+        };
+
+        socket.onclose = function() {
+            console.log("Conexão encerrada. Tentando reconectar em 5s...");
+            setTimeout(conectarTraccar, 5000);
+        };
+    }
+
+    // Iniciar conexão
+    conectarTraccar();
+
+    function enviarBloqueio() {
+        const confirmar = confirm("ENVIAR BLOQUEIO? A moto parará imediatamente.");
+        if(confirmar) {
+            // Aqui futuramente chamaremos a API de comandos (POST /api/commands/send)
+            alert("Comando de Bloqueio enviado para o ST-901!");
         }
-    </script>
+    }
+</script>
 </body>
 </html>
