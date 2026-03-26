@@ -3,162 +3,517 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Premium | Kappo Tracking</title>
-    
+    <title>Dashboard | Kappo Tracking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        body { 
-            background-color: #121212; color: #FFFFFF; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; display: flex; height: 100vh; overflow: hidden; transition: background-color 0.5s; 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --orange: #FF8C00;
+            --orange-dim: rgba(255,140,0,0.12);
+            --orange-glow: rgba(255,140,0,0.25);
+            --red: #FF3B3B;
+            --red-dim: rgba(255,59,59,0.12);
+            --green: #00E07A;
+            --green-dim: rgba(0,224,122,0.12);
+            --bg: #0C0C0E;
+            --surface: #111114;
+            --surface2: #18181D;
+            --surface3: #1F1F26;
+            --border: rgba(255,255,255,0.06);
+            --border2: rgba(255,255,255,0.1);
+            --text: #FFFFFF;
+            --muted: #5A5A6E;
+            --muted2: #8A8A9A;
+            --sidebar-w: 280px;
         }
-        
-        /* Sidebar mais fina: de 320px para 260px */
-        .sidebar { 
-            width: 260px; background-color: #1E1E1E; border-right: 1px solid #333; 
-            display: flex; flex-direction: column; padding: 15px; z-index: 1001; 
-            overflow-y: auto; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+
+        /* ─── TOP NAV ─── */
+        .topnav {
+            height: 56px; min-height: 56px;
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 200;
+        }
+        .topnav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .brand-icon {
+            width: 34px; height: 34px; background: var(--orange); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px var(--orange-glow);
+        }
+        .brand-icon svg { width: 18px; height: 18px; fill: #000; }
+        .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+        .brand-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; display: none; }
+        @media(min-width:600px){ .brand-sub { display: block; } }
+
+        .topnav-spacer { flex: 1; }
+
+        .nav-status { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
+        .status-dot.locked { background: var(--red); animation: none; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .status-label { font-size: 11px; color: var(--muted2); white-space: nowrap; }
+        .status-label.locked { color: var(--red); }
+
+        .nav-btn {
+            width: 34px; height: 34px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted2); transition: all 0.2s; flex-shrink: 0;
+        }
+        .nav-btn:hover { border-color: var(--border2); color: var(--text); }
+        .nav-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .menu-btn { display: flex; }
+        @media(min-width:900px){ .menu-btn { display: none; } }
+
+        /* ─── LAYOUT ─── */
+        .layout { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 150; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+            position: absolute; top: 0; bottom: 0; left: 0; overflow-y: auto;
+        }
+        @media(min-width:900px){ .sidebar { position: relative; transform: none !important; } }
+        .sidebar.closed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+        .sidebar-overlay {
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 140;
+            backdrop-filter: blur(2px);
+        }
+        .sidebar-overlay.visible { display: block; }
+        @media(min-width:900px){ .sidebar-overlay { display: none !important; } }
+
+        /* Bike card */
+        .bike-card {
+            padding: 16px; border-bottom: 1px solid var(--border);
+        }
+        .bike-photo {
+            width: 100%; height: 120px; border-radius: 10px; overflow: hidden; margin-bottom: 12px;
+            background: var(--surface3);
+            background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600');
+            background-size: cover; background-position: center;
             position: relative;
         }
-
-        .sidebar.minimized {
-            margin-left: -260px;
+        .bike-photo::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%);
         }
-        
-        .toggle-btn {
-            position: absolute; right: -35px; top: 15px; width: 35px; height: 35px;
-            background: #1E1E1E; border: 1px solid #333; border-left: none;
-            color: #FF8C00; cursor: pointer; display: flex; align-items: center;
-            justify-content: center; border-radius: 0 8px 8px 0; z-index: 1002;
-        }
-
-        .sidebar h2 { color: #FF8C00; font-size: 16px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .bike-card { 
-            background: #2D2D2D; padding: 12px; border-radius: 10px; border-left: 4px solid #FF8C00; 
-            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
-        }
-        
-        /* Ajuste da foto para caber na largura menor */
-        .bike-photo {
-            width: 100%; height: 130px; background-color: #121212; border-radius: 6px; margin-bottom: 12px;
-            background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600');
-            background-size: cover; background-position: center; border: 1px solid #444;
+        .bike-badge {
+            position: absolute; bottom: 8px; left: 8px; z-index: 1;
+            background: rgba(0,0,0,0.7); border: 1px solid var(--border2);
+            padding: 3px 8px; border-radius: 4px;
+            font-size: 9px; color: #fff; letter-spacing: 1px; text-transform: uppercase;
+            backdrop-filter: blur(8px);
         }
 
-        .status-pill { background: #00FF0033; color: #00FF00; padding: 3px 8px; border-radius: 20px; font-size: 9px; font-weight: bold; display: inline-block; margin-bottom: 8px; }
-        .bike-details { margin-top: 8px; font-size: 11px; border-top: 1px solid #333; padding-top: 10px; }
-        .detail-item { display: flex; justify-content: space-between; margin-bottom: 5px; color: #bbb; }
+        .bike-name { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
+            letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;
+        }
+        .pill-green { background: var(--green-dim); color: var(--green); }
+        .pill-red { background: var(--red-dim); color: var(--red); }
+        .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 2s ease-in-out infinite; }
 
-        /* Estilo Bloqueado */
-        body.bloqueado { background-color: #2b0000; }
-        body.bloqueado #statusPill { background: #ff000033; color: #ff4444; }
-        body.bloqueado .bike-card { border-left-color: #ff0000; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .detail-box {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px;
+        }
+        .detail-box-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+        .detail-box-value { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; color: #ddd; }
 
-        /* Histórico */
-        .history-section { margin-top: auto; border-top: 1px solid #333; padding-top: 15px; }
-        .history-title { font-size: 11px; color: #FF8C00; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
-        .history-item { font-size: 10px; padding: 6px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; display: flex; justify-content: space-between; }
+        /* Controls */
+        .controls { padding: 16px; border-bottom: 1px solid var(--border); }
+        .controls-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ctrl-btn {
+            padding: 11px; border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .ctrl-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .btn-lock { background: var(--red-dim); color: var(--red); border-color: rgba(255,59,59,0.2); }
+        .btn-lock:hover { background: rgba(255,59,59,0.2); }
+        .btn-unlock { background: var(--green-dim); color: var(--green); border-color: rgba(0,224,122,0.2); }
+        .btn-unlock:hover { background: rgba(0,224,122,0.2); }
 
-        /* Mapa e Overlay */
-        #map { flex-grow: 1; height: 100vh; z-index: 1; }
-        body.bloqueado #map { filter: grayscale(1) sepia(1) hue-rotate(-50deg); }
+        /* Stats strip */
+        .stats-strip { padding: 16px; border-bottom: 1px solid var(--border); }
+        .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-label { font-size: 11px; color: var(--muted2); }
+        .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; color: var(--orange); }
 
-        .overlay-info { position: absolute; top: 20px; right: 20px; background: rgba(30, 30, 30, 0.9); padding: 15px; border-radius: 12px; border: 1px solid #444; width: 180px; z-index: 1000; text-align: center; backdrop-filter: blur(8px); }
-        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
-        .btn { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; font-size: 10px; text-transform: uppercase; }
-        .btn-lock { background: #FF4444; color: white; }
-        .btn-unlock { background: #00e054; color: black; }
+        /* History */
+        .history { padding: 16px; flex: 1; }
+        .history-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .hist-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 0; border-bottom: 1px solid var(--border);
+        }
+        .hist-item:last-child { border-bottom: none; }
+        .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface3); border: 2px solid var(--muted); flex-shrink: 0; }
+        .hist-dot.recent { border-color: var(--orange); background: var(--orange-dim); }
+        .hist-name { font-size: 12px; color: var(--muted2); flex: 1; }
+        .hist-time { font-size: 10px; color: var(--muted); font-family: 'Rajdhani', sans-serif; }
+
+        /* ─── MAP AREA ─── */
+        .map-area { flex: 1; position: relative; overflow: hidden; }
+        #map { position: absolute; inset: 0; z-index: 1; }
+
+        /* Lock overlay */
+        .lock-overlay {
+            position: absolute; inset: 0; z-index: 5;
+            background: rgba(40,0,0,0.55);
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px; text-align: center;
+            backdrop-filter: grayscale(0.5) sepia(0.3);
+        }
+        .lock-overlay.visible { display: flex; }
+        .lock-icon { width: 64px; height: 64px; background: var(--red-dim); border: 1px solid rgba(255,59,59,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+        .lock-icon svg { width: 28px; height: 28px; stroke: var(--red); fill: none; stroke-width: 2; }
+        .lock-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; color: var(--red); letter-spacing: 1px; }
+        .lock-sub { font-size: 12px; color: var(--muted2); }
+
+        /* Speed widget */
+        .speed-widget {
+            position: absolute; top: 16px; right: 16px; z-index: 10;
+            background: rgba(17,17,20,0.92); border: 1px solid var(--border2);
+            border-radius: 14px; padding: 16px 20px; min-width: 140px;
+            backdrop-filter: blur(16px); text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .speed-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+        .speed-value { font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 700; color: var(--orange); line-height: 1; }
+        .speed-unit { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+        .speed-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+        .speed-bar-fill { height: 100%; background: var(--orange); border-radius: 2px; width: 0%; transition: width 1s ease; }
+
+        /* Coordinates chip */
+        .coord-chip {
+            position: absolute; bottom: 16px; right: 16px; z-index: 10;
+            background: rgba(17,17,20,0.92); border: 1px solid var(--border);
+            border-radius: 8px; padding: 8px 12px;
+            backdrop-filter: blur(16px);
+            font-size: 10px; color: var(--muted2); font-family: 'Rajdhani', monospace; letter-spacing: 0.5px;
+        }
+        .coord-chip span { color: var(--orange); }
+
+        /* Mobile bottom bar */
+        .mobile-bottombar {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+            background: rgba(17,17,20,0.95); border-top: 1px solid var(--border);
+            padding: 10px 16px; gap: 8px;
+            backdrop-filter: blur(16px);
+        }
+        @media(max-width:899px){ .mobile-bottombar { display: flex; } }
+        .mbb-speed {
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+        }
+        .mbb-speed-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+        .mbb-speed-val { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; color: var(--orange); line-height: 1.1; }
+        .mbb-btns { display: flex; gap: 8px; }
+        .mbb-btn {
+            padding: 10px 16px; border: none; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+        }
+        .mbb-lock { background: var(--red); color: #fff; }
+        .mbb-unlock { background: var(--green); color: #000; }
+
+        /* Leaflet overrides */
+        .leaflet-control-zoom { border: 1px solid var(--border) !important; border-radius: 8px !important; overflow: hidden; }
+        .leaflet-control-zoom a { background: var(--surface2) !important; color: var(--muted2) !important; border: none !important; transition: color 0.15s; }
+        .leaflet-control-zoom a:hover { color: var(--orange) !important; }
+
+        /* Body locked state */
+        body.locked { }
+        body.locked #map { filter: grayscale(0.8) sepia(0.4) hue-rotate(-30deg); }
     </style>
 </head>
 <body id="mainBody">
 
-    <div class="sidebar" id="sidebar">
-        <button class="toggle-btn" onclick="toggleSidebar()">
-            <span id="toggleIcon">◀</span>
+    <!-- TOP NAV -->
+    <nav class="topnav">
+        <button class="nav-btn menu-btn" onclick="toggleSidebar()" title="Menu">
+            <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
         </button>
-
-        <h2>Kappo Tracking</h2>
-        
-        <div class="bike-card">
-            <div class="bike-photo"></div> 
-            <div id="statusPill" class="status-pill">● MONITORAMENTO ATIVO</div>
-            <div style="font-weight: bold; font-size: 13px;">E-Bike Karice #01</div>
-            
-            <div class="bike-details">
-                <div class="detail-item"><span>Hardware:</span> <span>ST-901 4G</span></div>
-                <div class="detail-item"><span>ID Local:</span> <span>7654321</span></div>
+        <div class="topnav-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <div>
+                <div class="brand-name">Kappo</div>
+                <div class="brand-sub">Tracking System</div>
             </div>
         </div>
+        <div class="topnav-spacer"></div>
+        <div class="nav-status" id="navStatus">
+            <div class="status-dot" id="navDot"></div>
+            <span class="status-label" id="navLabel">Monitoramento ativo</span>
+        </div>
+        <button class="nav-btn" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button class="nav-btn" title="Sair" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+    </nav>
 
-        <div class="history-section">
-            <div class="history-title">🕒 Últimos Locais</div>
-            <div class="history-item"><span>Orla Itaguá</span> <span style="color:#666">10:45</span></div>
-            <div class="history-item"><span>Centro - Itaú</span> <span style="color:#666">09:20</span></div>
+    <!-- LAYOUT -->
+    <div class="layout">
+        <!-- Overlay for mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar closed" id="sidebar">
+            <!-- Bike card -->
+            <div class="bike-card">
+                <div class="bike-photo">
+                    <div class="bike-badge">ST-901 4G</div>
+                </div>
+                <div class="bike-name">E-Bike Karice #01</div>
+                <div class="pill pill-green" id="statusPill">
+                    <div class="pill-dot"></div>
+                    Monitoramento Ativo
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-box">
+                        <div class="detail-box-label">Hardware</div>
+                        <div class="detail-box-value">ST-901</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-box-label">Rede</div>
+                        <div class="detail-box-value">4G LTE</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-box-label">ID Local</div>
+                        <div class="detail-box-value">7654321</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-box-label">Bateria</div>
+                        <div class="detail-box-value">87%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <div class="controls-title">Controle Remoto</div>
+                <div class="btn-row">
+                    <button class="ctrl-btn btn-lock" onclick="setLocked(true)">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Bloquear
+                    </button>
+                    <button class="ctrl-btn btn-unlock" onclick="setLocked(false)">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                        Liberar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats strip -->
+            <div class="stats-strip">
+                <div class="stat-item">
+                    <span class="stat-label">Velocidade atual</span>
+                    <span class="stat-value" id="sideSpeed">— km/h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Distância hoje</span>
+                    <span class="stat-value">12.4 km</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sinal GPS</span>
+                    <span class="stat-value" style="color:var(--green)">Forte</span>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="history">
+                <div class="history-title">🕒 Histórico de Locais</div>
+                <div class="hist-item">
+                    <div class="hist-dot recent"></div>
+                    <div class="hist-name">Orla Itaguá</div>
+                    <div class="hist-time">10:45</div>
+                </div>
+                <div class="hist-item">
+                    <div class="hist-dot"></div>
+                    <div class="hist-name">Centro – Itaú</div>
+                    <div class="hist-time">09:20</div>
+                </div>
+                <div class="hist-item">
+                    <div class="hist-dot"></div>
+                    <div class="hist-name">Praia do Perequê</div>
+                    <div class="hist-time">08:05</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAP AREA -->
+        <div class="map-area">
+            <div id="map"></div>
+
+            <!-- Lock overlay -->
+            <div class="lock-overlay" id="lockOverlay">
+                <div class="lock-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div class="lock-title">Motor Bloqueado</div>
+                <div class="lock-sub">E-Bike imobilizada remotamente</div>
+            </div>
+
+            <!-- Speed widget - desktop only -->
+            <div class="speed-widget" id="speedWidget">
+                <div class="speed-label">Velocidade</div>
+                <div class="speed-value" id="speedVal">0</div>
+                <div class="speed-unit">km/h</div>
+                <div class="speed-bar"><div class="speed-bar-fill" id="speedBar"></div></div>
+            </div>
+
+            <!-- Coordinates chip -->
+            <div class="coord-chip" id="coordChip">
+                <span>-23.4332</span>, <span>-45.0711</span>
+            </div>
         </div>
     </div>
 
-    <div id="map"></div>
-
-    <div class="overlay-info">
-        <div style="font-size: 10px; color: #888;">VELOCIDADE</div>
-        <div id="speed" style="font-size: 22px; font-weight: bold; color: #FF8C00;">0 km/h</div>
-        <div class="btn-group">
-            <button class="btn btn-lock" onclick="setEstado(true)">Bloquear</button>
-            <button class="btn btn-unlock" onclick="setEstado(false)">Liberar</button>
+    <!-- MOBILE BOTTOM BAR -->
+    <div class="mobile-bottombar">
+        <div class="mbb-speed">
+            <div class="mbb-speed-label">Velocidade</div>
+            <div class="mbb-speed-val" id="mbbSpeed">0 km/h</div>
+        </div>
+        <div class="mbb-btns">
+            <button class="mbb-btn mbb-lock" onclick="setLocked(true)">🔒 Bloquear</button>
+            <button class="mbb-btn mbb-unlock" onclick="setLocked(false)">🔓 Liberar</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // ─── SIDEBAR TOGGLE ───
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const icon = document.getElementById('toggleIcon');
-            sidebar.classList.toggle('minimized');
-            icon.innerHTML = sidebar.classList.contains('minimized') ? "▶" : "◀";
-            setTimeout(() => { map.invalidateSize(); }, 400);
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('closed');
+            ov.classList.toggle('visible');
+            setTimeout(() => map.invalidateSize(), 360);
         }
 
-        var map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        // Auto-open sidebar on desktop
+        function handleResize() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            if (window.innerWidth >= 900) {
+                sb.classList.remove('closed');
+                ov.classList.remove('visible');
+            } else {
+                if (!sb.classList.contains('closed')) {
+                    // keep as is
+                }
+            }
+            map.invalidateSize();
+        }
+        window.addEventListener('resize', handleResize);
 
-        function getIcon(color) {
+        // ─── MAP ───
+        var map = L.map('map', { zoomControl: true }).setView([-23.4332, -45.0711], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB',
+            maxZoom: 19
+        }).addTo(map);
+
+        function makeIcon(color) {
             return L.divIcon({
-                className: 'custom-icon',
-                html: `<div style='background-color:${color}; height:16px; width:16px; border-radius:50%; border:2px solid white; box-shadow: 0 0 12px ${color}; transition: 0.5s;'></div>`,
+                className: '',
+                html: `<div style="
+                    width:16px; height:16px; border-radius:50%;
+                    background:${color}; border:2px solid rgba(255,255,255,0.8);
+                    box-shadow: 0 0 16px ${color}, 0 0 32px ${color}40;
+                    transition: all 0.5s ease;
+                "></div>`,
                 iconSize: [16, 16], iconAnchor: [8, 8]
             });
         }
 
-        var marker = L.marker([-23.4332, -45.0711], {icon: getIcon('#FF8C00')}).addTo(map);
+        var marker = L.marker([-23.4332, -45.0711], { icon: makeIcon('#FF8C00') }).addTo(map);
+        var polyline = L.polyline([], { color: '#FF8C00', opacity: 0.4, weight: 2, dashArray: '6,8' }).addTo(map);
+        var trail = [[-23.4332, -45.0711]];
 
-        function setEstado(bloquear) {
+        // ─── LOCK STATE ───
+        var isLocked = false;
+
+        function setLocked(lock) {
+            isLocked = lock;
             const body = document.getElementById('mainBody');
             const pill = document.getElementById('statusPill');
-            if(bloquear) {
-                body.classList.add('bloqueado');
-                pill.innerHTML = "● MOTOR BLOQUEADO";
-                marker.setIcon(getIcon('#FF0000'));
+            const navDot = document.getElementById('navDot');
+            const navLabel = document.getElementById('navLabel');
+            const overlay = document.getElementById('lockOverlay');
+
+            if (lock) {
+                body.classList.add('locked');
+                pill.className = 'pill pill-red';
+                pill.innerHTML = '<div class="pill-dot"></div>Motor Bloqueado';
+                navDot.className = 'status-dot locked';
+                navLabel.textContent = 'Motor bloqueado';
+                navLabel.className = 'status-label locked';
+                overlay.classList.add('visible');
+                marker.setIcon(makeIcon('#FF3B3B'));
+                updateSpeed(0);
             } else {
-                body.classList.remove('bloqueado');
-                pill.innerHTML = "● MONITORAMENTO ATIVO";
-                marker.setIcon(getIcon('#FF8C00'));
+                body.classList.remove('locked');
+                pill.className = 'pill pill-green';
+                pill.innerHTML = '<div class="pill-dot"></div>Monitoramento Ativo';
+                navDot.className = 'status-dot';
+                navLabel.textContent = 'Monitoramento ativo';
+                navLabel.className = 'status-label';
+                overlay.classList.remove('visible');
+                marker.setIcon(makeIcon('#FF8C00'));
             }
         }
 
-        function simular() {
-            if(!document.getElementById('mainBody').classList.contains('bloqueado')) {
-                let lat = -23.4332 + (Math.random() - 0.5) * 0.002;
-                let lng = -45.0711 + (Math.random() - 0.5) * 0.002;
-                let speed = Math.floor(Math.random() * 25 + 5);
-                marker.setLatLng([lat, lng]);
-                document.getElementById('speed').innerHTML = `${speed} km/h`;
-            } else {
-                document.getElementById('speed').innerHTML = `0 km/h`;
-            }
-            setTimeout(simular, 3000); 
+        // ─── SPEED / POSITION SIMULATION ───
+        function updateSpeed(kmh) {
+            document.getElementById('speedVal').textContent = kmh;
+            document.getElementById('mbbSpeed').textContent = kmh + ' km/h';
+            document.getElementById('sideSpeed').textContent = kmh + ' km/h';
+            document.getElementById('speedBar').style.width = Math.min(kmh / 40 * 100, 100) + '%';
         }
-        simular();
+
+        function simulate() {
+            if (!isLocked) {
+                const lat = -23.4332 + (Math.random() - 0.5) * 0.003;
+                const lng = -45.0711 + (Math.random() - 0.5) * 0.003;
+                const speed = Math.floor(Math.random() * 28 + 3);
+
+                marker.setLatLng([lat, lng]);
+                updateSpeed(speed);
+
+                trail.push([lat, lng]);
+                if (trail.length > 12) trail.shift();
+                polyline.setLatLngs(trail);
+
+                document.getElementById('coordChip').innerHTML =
+                    `<span>${lat.toFixed(4)}</span>, <span>${lng.toFixed(4)}</span>`;
+            } else {
+                updateSpeed(0);
+            }
+            setTimeout(simulate, 3000);
+        }
+        simulate();
+
+        // Init layout
+        handleResize();
     </script>
 </body>
 </html>

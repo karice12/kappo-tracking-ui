@@ -4,85 +4,387 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kappo Tracking | E-bike Security</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --orange: #FF8C00;
+            --orange-bright: #FFA733;
+            --orange-dim: rgba(255, 140, 0, 0.15);
+            --bg: #0C0C0E;
+            --surface: #131316;
+            --surface2: #1C1C21;
+            --border: rgba(255,255,255,0.07);
+            --text: #FFFFFF;
+            --muted: #6B6B7A;
+            --success: #00E07A;
+        }
+
         body {
-            /* Imagem de fundo temática (Estrada/Tecnologia) */
-            background: linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 0.8)), 
-                        url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=2070&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: #FFFFFF;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+            overflow: hidden;
+            position: relative;
         }
+
+        /* Animated background grid */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0;
+            background-image: 
+                linear-gradient(rgba(255,140,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,140,0,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridDrift 20s linear infinite;
+        }
+        @keyframes gridDrift { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+
+        /* Glowing orbs */
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(80px); z-index: 0; pointer-events: none;
+        }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(255,140,0,0.12) 0%, transparent 70%); top: -100px; right: -100px; animation: float1 8s ease-in-out infinite; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,80,0,0.08) 0%, transparent 70%); bottom: -80px; left: 20%; animation: float2 10s ease-in-out infinite; }
+        @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,20px)} }
+        @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-30px)} }
+
+        /* Left panel - only on desktop */
+        .left-panel {
+            flex: 1;
+            display: none;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0C0C0E 0%, #141418 100%);
+            border-right: 1px solid var(--border);
+        }
+        @media (min-width: 900px) { .left-panel { display: flex; flex-direction: column; justify-content: center; padding: 60px; } }
+
+        .left-panel .brand { margin-bottom: 60px; }
+        .brand-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+        .brand-icon {
+            width: 44px; height: 44px; background: var(--orange); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(255,140,0,0.4);
+        }
+        .brand-icon svg { width: 24px; height: 24px; fill: #000; }
+        .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+        .brand-tagline { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+
+        .feature-list { display: flex; flex-direction: column; gap: 20px; }
+        .feature-item { display: flex; align-items: flex-start; gap: 16px; }
+        .feature-dot {
+            width: 36px; height: 36px; min-width: 36px; border-radius: 8px;
+            background: var(--orange-dim); border: 1px solid rgba(255,140,0,0.2);
+            display: flex; align-items: center; justify-content: center; margin-top: 2px;
+        }
+        .feature-dot svg { width: 16px; height: 16px; stroke: var(--orange); fill: none; stroke-width: 2; }
+        .feature-title { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+        .feature-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+        .map-preview {
+            position: absolute; bottom: 40px; right: 40px;
+            width: 220px; height: 140px; border-radius: 12px;
+            background: var(--surface2); border: 1px solid var(--border);
+            overflow: hidden; opacity: 0.7;
+        }
+        .map-preview-inner {
+            width: 100%; height: 100%;
+            background: 
+                repeating-linear-gradient(0deg, rgba(255,140,0,0.04) 0px, rgba(255,140,0,0.04) 1px, transparent 1px, transparent 40px),
+                repeating-linear-gradient(90deg, rgba(255,140,0,0.04) 0px, rgba(255,140,0,0.04) 1px, transparent 1px, transparent 40px),
+                #131316;
+            position: relative;
+        }
+        .map-pulse {
+            position: absolute; top: 50%; left: 55%; transform: translate(-50%,-50%);
+            width: 12px; height: 12px;
+        }
+        .map-pulse::before { content:''; position:absolute; inset:0; background:var(--orange); border-radius:50%; }
+        .map-pulse::after { content:''; position:absolute; inset:-6px; border:2px solid var(--orange); border-radius:50%; opacity:0.4; animation:pulse 2s ease-out infinite; }
+        @keyframes pulse { 0%{transform:scale(1);opacity:0.5} 100%{transform:scale(2.5);opacity:0} }
+        .map-label { position:absolute; bottom:10px; left:12px; font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+
+        /* Right panel - login form */
+        .right-panel {
+            width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px; position: relative; z-index: 1;
+        }
+        @media (min-width: 900px) { .right-panel { width: 440px; min-width: 440px; padding: 60px 50px; } }
+
         .login-card {
-            background-color: rgba(30, 30, 30, 0.95); /* Leve transparência para estilo premium */
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
-            text-align: center;
-            border-top: 6px solid #FF8C00; /* Nosso Laranja Stealth */
-            width: 340px;
-            backdrop-filter: blur(5px); /* Efeito de vidro fosco */
+            width: 100%; max-width: 380px;
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
-        h1 { 
-            color: #FF8C00; 
-            margin-bottom: 5px; 
-            font-size: 28px; 
-            letter-spacing: -1px;
-            text-transform: uppercase;
+        @keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:none} }
+
+        /* Mobile brand */
+        .mobile-brand {
+            display: flex; flex-direction: column; align-items: center; margin-bottom: 40px;
         }
-        p { color: #B0B0B0; font-size: 13px; margin-bottom: 30px; line-height: 1.4; }
-        input {
-            width: 100%;
-            padding: 14px;
-            margin: 10px 0;
-            background: #2D2D2D;
-            border: 1px solid #454545;
-            border-radius: 8px;
-            color: white;
-            box-sizing: border-box;
-            outline: none;
+        @media (min-width: 900px) { .mobile-brand { display: none; } }
+        .mobile-brand .brand-icon { width: 52px; height: 52px; margin-bottom: 12px; }
+        .mobile-brand .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: 3px; }
+        .mobile-brand .brand-tagline { font-size: 12px; color: var(--muted); margin-top: 2px; letter-spacing: 1px; }
+
+        .form-header { margin-bottom: 36px; }
+        .form-title { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+        .form-subtitle { font-size: 13px; color: var(--muted); }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block; font-size: 11px; font-weight: 500; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
         }
-        input:focus { border-color: #FF8C00; }
-        button {
-            width: 100%;
-            padding: 14px;
-            background-color: #FF8C00;
-            border: none;
-            border-radius: 8px;
-            color: #000;
-            font-weight: 800;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+        .input-icon svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; }
+
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 14px 14px 14px 44px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif;
+            font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
         }
-        button:hover { 
-            background-color: #FFA500; 
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4);
+        input:focus {
+            border-color: rgba(255,140,0,0.5);
+            box-shadow: 0 0 0 3px rgba(255,140,0,0.08);
         }
-        .footer-text {
-            margin-top: 25px;
-            font-size: 11px;
-            color: #666;
+        input::placeholder { color: var(--muted); }
+
+        .show-password { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 4px; }
+        .show-password svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; }
+
+        .form-options { display: flex; justify-content: space-between; align-items: center; margin: 8px 0 28px; }
+        .remember { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .remember input[type="checkbox"] { display: none; }
+        .checkbox-custom {
+            width: 16px; height: 16px; border: 1px solid var(--border);
+            border-radius: 4px; background: var(--surface2); position: relative;
+            transition: all 0.15s; flex-shrink: 0;
         }
+        .remember input:checked + .checkbox-custom {
+            background: var(--orange); border-color: var(--orange);
+        }
+        .remember input:checked + .checkbox-custom::after {
+            content: ''; position: absolute; left: 4px; top: 1px;
+            width: 6px; height: 10px; border: 2px solid #000; border-top: none; border-left: none;
+            transform: rotate(45deg);
+        }
+        .remember-label { font-size: 13px; color: var(--muted); }
+        .forgot { font-size: 13px; color: var(--orange); text-decoration: none; transition: color 0.2s; }
+        .forgot:hover { color: var(--orange-bright); }
+
+        .btn-submit {
+            width: 100%; padding: 15px;
+            background: var(--orange); border: none; border-radius: 10px;
+            color: #000; font-family: 'Rajdhani', sans-serif; font-size: 15px;
+            font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+        }
+        .btn-submit::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,140,0,0.35); }
+        .btn-submit:hover::before { opacity: 1; }
+        .btn-submit:active { transform: none; }
+
+        .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+        .divider-line { flex: 1; height: 1px; background: var(--border); }
+        .divider-text { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+        .demo-credentials {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 14px 16px;
+        }
+        .demo-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .demo-row { display: flex; justify-content: space-between; align-items: center; }
+        .demo-item { display: flex; align-items: center; gap: 8px; }
+        .demo-key { font-size: 11px; color: var(--muted); }
+        .demo-val { font-size: 12px; color: #fff; font-weight: 500; font-family: 'Rajdhani', monospace; }
+
+        .footer { margin-top: 32px; text-align: center; font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+        .footer span { color: rgba(255,140,0,0.5); }
+
+        /* Status bar */
+        .status-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+            background: rgba(19,19,22,0.9); border-top: 1px solid var(--border);
+            padding: 8px 20px; display: flex; align-items: center; gap: 8px;
+            backdrop-filter: blur(12px);
+        }
+        .status-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .status-text { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+        .status-text strong { color: var(--success); font-weight: 500; }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <h1>Kappo Tracking</h1>
-        <p>Segurança Avançada para sua E-bike<br><strong>Ubatuba • SP</strong></p>
-        <input type="text" placeholder="Seu usuário">
-        <input type="password" placeholder="Sua senha">
-        <button onclick="window.location.href='dashboard.html'">Acessar Monitoramento</button>
-        <div class="footer-text">© 2026 Kappo Tracking - Intelligent Security</div>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- Left panel - desktop only -->
+    <div class="left-panel">
+        <div class="brand">
+            <div class="brand-logo">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <div>
+                    <div class="brand-name">Kappo Tracking</div>
+                    <div class="brand-tagline">UBATUBA • SÃO PAULO • BR</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item" style="animation-delay:0.1s">
+                <div class="feature-dot">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                </div>
+                <div>
+                    <div class="feature-title">Rastreamento em Tempo Real</div>
+                    <div class="feature-desc">Localização GPS precisa com atualização a cada 3 segundos via rede 4G.</div>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-dot">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                    <div class="feature-title">Bloqueio Remoto do Motor</div>
+                    <div class="feature-desc">Imobilize sua e-bike instantaneamente pelo app em caso de roubo.</div>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-dot">
+                    <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                </div>
+                <div>
+                    <div class="feature-title">Histórico de Rotas</div>
+                    <div class="feature-desc">Acesse registros completos de trajetos, velocidade e paradas.</div>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-dot">
+                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.06 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91"/></svg>
+                </div>
+                <div>
+                    <div class="feature-title">Alertas Inteligentes</div>
+                    <div class="feature-desc">Notificações automáticas de movimento suspeito e saída de zona segura.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-preview">
+            <div class="map-preview-inner">
+                <div class="map-pulse"></div>
+                <div class="map-label">Live GPS • Ubatuba</div>
+            </div>
+        </div>
     </div>
+
+    <!-- Right panel - login -->
+    <div class="right-panel">
+        <div class="login-card">
+            <!-- Mobile brand -->
+            <div class="mobile-brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:#000"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <div class="brand-name">Kappo Tracking</div>
+                <div class="brand-tagline">UBATUBA • SP</div>
+            </div>
+
+            <div class="form-header">
+                <div class="form-title">Bem-vindo de volta</div>
+                <div class="form-subtitle">Acesse o painel de monitoramento da sua e-bike</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Usuário</label>
+                <div class="input-wrap">
+                    <div class="input-icon">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <input type="text" id="user" placeholder="seu@email.com" autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Senha</label>
+                <div class="input-wrap">
+                    <div class="input-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password">
+                    <button class="show-password" type="button" onclick="togglePass()" title="Mostrar senha">
+                        <svg viewBox="0 0 24 24" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label class="remember">
+                    <input type="checkbox" id="remember">
+                    <div class="checkbox-custom"></div>
+                    <span class="remember-label">Lembrar acesso</span>
+                </label>
+                <a href="#" class="forgot">Esqueci a senha</a>
+            </div>
+
+            <button class="btn-submit" onclick="doLogin()">
+                Acessar Monitoramento
+            </button>
+
+            <div class="divider">
+                <div class="divider-line"></div>
+                <div class="divider-text">DEMO</div>
+                <div class="divider-line"></div>
+            </div>
+
+            <div class="demo-credentials">
+                <div class="demo-title">Credenciais de demonstração</div>
+                <div class="demo-row">
+                    <div class="demo-item"><span class="demo-key">Usuário:</span><span class="demo-val">demo@kappo.app</span></div>
+                    <div class="demo-item"><span class="demo-key">Senha:</span><span class="demo-val">kappo2026</span></div>
+                </div>
+            </div>
+
+            <div class="footer">
+                © 2026 <span>Kappo Tracking</span> — Intelligent Security System
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-dot"></div>
+        <div class="status-text">Sistema <strong>operacional</strong> · Hardware ST-901 4G · Sinal GPS estável</div>
+    </div>
+
+    <script>
+        function togglePass() {
+            const input = document.getElementById('pass');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+        function doLogin() {
+            const btn = document.querySelector('.btn-submit');
+            btn.textContent = 'Autenticando...';
+            btn.style.opacity = '0.7';
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+        }
+        // Stagger feature items
+        document.querySelectorAll('.feature-item').forEach((el, i) => {
+            el.style.animation = `slideUp 0.5s ${0.1 + i * 0.08}s both`;
+        });
+    </script>
 </body>
 </html>
