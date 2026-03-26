@@ -13,93 +13,96 @@
             margin: 0; display: flex; height: 100vh; overflow: hidden; transition: background-color 0.5s; 
         }
         
-        /* Barra Lateral (Sidebar) - Ajuste Premium */
+        /* Sidebar mais fina: de 320px para 260px */
         .sidebar { 
-            width: 320px; background-color: #1E1E1E; border-right: 1px solid #333; 
-            display: flex; flex-direction: column; padding: 20px; z-index: 1000; overflow-y: auto; 
+            width: 260px; background-color: #1E1E1E; border-right: 1px solid #333; 
+            display: flex; flex-direction: column; padding: 15px; z-index: 1001; 
+            overflow-y: auto; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
-        .sidebar h2 { color: #FF8C00; font-size: 18px; margin: 0 0 20px 0; text-transform: uppercase; letter-spacing: 1px; }
+
+        .sidebar.minimized {
+            margin-left: -260px;
+        }
         
-        /* Card do Veículo e Foto */
-        .bike-card { 
-            background: #2D2D2D; padding: 15px; border-radius: 12px; border-left: 5px solid #FF8C00; 
-            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+        .toggle-btn {
+            position: absolute; right: -35px; top: 15px; width: 35px; height: 35px;
+            background: #1E1E1E; border: 1px solid #333; border-left: none;
+            color: #FF8C00; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; border-radius: 0 8px 8px 0; z-index: 1002;
         }
+
+        .sidebar h2 { color: #FF8C00; font-size: 16px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .bike-card { 
+            background: #2D2D2D; padding: 12px; border-radius: 10px; border-left: 4px solid #FF8C00; 
+            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+        }
+        
+        /* Ajuste da foto para caber na largura menor */
         .bike-photo {
-            width: 100%; height: 160px; background-color: #121212; border-radius: 8px; margin-bottom: 15px;
-            background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600'); /* Foto de exemplo */
+            width: 100%; height: 130px; background-color: #121212; border-radius: 6px; margin-bottom: 12px;
+            background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600');
             background-size: cover; background-position: center; border: 1px solid #444;
         }
-        .status-pill { background: #00FF0033; color: #00FF00; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
-        
-        /* Estilo da Seção de Detalhes Técnicos */
-        .bike-details { margin-top: 10px; font-size: 12px; border-top: 1px solid #333; padding-top: 15px; }
-        .detail-item { display: flex; justify-content: space-between; margin-bottom: 6px; color: #bbb; }
-        .detail-label { font-weight: bold; color: #aaa; }
 
-        /* Estilo Bloqueado (Alerta) */
+        .status-pill { background: #00FF0033; color: #00FF00; padding: 3px 8px; border-radius: 20px; font-size: 9px; font-weight: bold; display: inline-block; margin-bottom: 8px; }
+        .bike-details { margin-top: 8px; font-size: 11px; border-top: 1px solid #333; padding-top: 10px; }
+        .detail-item { display: flex; justify-content: space-between; margin-bottom: 5px; color: #bbb; }
+
+        /* Estilo Bloqueado */
         body.bloqueado { background-color: #2b0000; }
         body.bloqueado #statusPill { background: #ff000033; color: #ff4444; }
         body.bloqueado .bike-card { border-left-color: #ff0000; }
 
-        /* Histórico Simulado */
-        .history-section { margin-top: auto; border-top: 1px solid #333; padding-top: 20px; }
-        .history-title { font-size: 12px; color: #FF8C00; font-weight: bold; margin: 0 0 10px 0; text-transform: uppercase; }
-        .history-item { font-size: 11px; padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; display: flex; justify-content: space-between; }
-        .history-time { color: #666; font-size: 10px; }
+        /* Histórico */
+        .history-section { margin-top: auto; border-top: 1px solid #333; padding-top: 15px; }
+        .history-title { font-size: 11px; color: #FF8C00; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        .history-item { font-size: 10px; padding: 6px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; display: flex; justify-content: space-between; }
 
-        /* Mapa e Telemetria Overlay */
-        #map { flex-grow: 1; height: 100vh; transition: filter 0.5s; z-index: 1; }
+        /* Mapa e Overlay */
+        #map { flex-grow: 1; height: 100vh; z-index: 1; }
         body.bloqueado #map { filter: grayscale(1) sepia(1) hue-rotate(-50deg); }
 
-        .overlay-info { position: absolute; top: 20px; right: 20px; background: rgba(30, 30, 30, 0.9); padding: 20px; border-radius: 15px; border: 1px solid #444; width: 200px; z-index: 1000; text-align: center; backdrop-filter: blur(8px); }
-        
-        /* Botões de Comando */
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 11px; transition: 0.3s; text-transform: uppercase; }
+        .overlay-info { position: absolute; top: 20px; right: 20px; background: rgba(30, 30, 30, 0.9); padding: 15px; border-radius: 12px; border: 1px solid #444; width: 180px; z-index: 1000; text-align: center; backdrop-filter: blur(8px); }
+        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+        .btn { border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; font-size: 10px; text-transform: uppercase; }
         .btn-lock { background: #FF4444; color: white; }
         .btn-unlock { background: #00e054; color: black; }
-        .btn:hover { opacity: 0.8; transform: scale(1.05); }
     </style>
 </head>
 <body id="mainBody">
 
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()">
+            <span id="toggleIcon">◀</span>
+        </button>
+
         <h2>Kappo Tracking</h2>
         
         <div class="bike-card">
-            <div class="bike-photo"></div> <div id="statusPill" class="status-pill">● MONITORAMENTO ATIVO</div>
-            <div style="font-weight: bold; font-size: 15px;">E-Bike Karice #01</div>
+            <div class="bike-photo"></div> 
+            <div id="statusPill" class="status-pill">● MONITORAMENTO ATIVO</div>
+            <div style="font-weight: bold; font-size: 13px;">E-Bike Karice #01</div>
             
             <div class="bike-details">
-                <div class="detail-item"><span class="detail-label">Hardware:</span> SinoTrack ST-901 4G</div>
-                <div class="detail-item"><span class="detail-label">Marca:</span> Caloi E-Vibe Elite</div>
-                <div class="detail-item"><span class="detail-label">Cor:</span> Preto Stealth</div>
-                <div class="detail-item"><span class="detail-label">Ano:</span> 2026</div>
-                <div class="detail-item"><span class="detail-label">ID Local:</span> 7654321</div>
+                <div class="detail-item"><span>Hardware:</span> <span>ST-901 4G</span></div>
+                <div class="detail-item"><span>ID Local:</span> <span>7654321</span></div>
             </div>
         </div>
 
         <div class="history-section">
-            <div class="history-title">🕒 Últimos Locais Vistos</div>
-            <div id="history-list">
-                <div class="history-item"><span>Orla Itaguá</span> <span class="history-time">10:45</span></div>
-                <div class="history-item"><span>Centro - Banco Itaú</span> <span class="history-time">09:20</span></div>
-            </div>
-        </div>
-
-        <div style="margin-top: 15px; font-size: 10px; color: #555; text-align: center;">
-            UBATUBA/SP - PROTOCOLO SEGURANÇA ATIVO
+            <div class="history-title">🕒 Últimos Locais</div>
+            <div class="history-item"><span>Orla Itaguá</span> <span style="color:#666">10:45</span></div>
+            <div class="history-item"><span>Centro - Itaú</span> <span style="color:#666">09:20</span></div>
         </div>
     </div>
 
     <div id="map"></div>
 
     <div class="overlay-info">
-        <div style="font-size: 11px; color: #888;">VELOCIDADE ATUAL</div>
-        <div id="speed" style="font-size: 26px; font-weight: bold; color: #FF8C00;">0 km/h</div>
-        <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
-        
+        <div style="font-size: 10px; color: #888;">VELOCIDADE</div>
+        <div id="speed" style="font-size: 22px; font-weight: bold; color: #FF8C00;">0 km/h</div>
         <div class="btn-group">
             <button class="btn btn-lock" onclick="setEstado(true)">Bloquear</button>
             <button class="btn btn-unlock" onclick="setEstado(false)">Liberar</button>
@@ -108,50 +111,46 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Inicializar mapa em Ubatuba
-        var map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const icon = document.getElementById('toggleIcon');
+            sidebar.classList.toggle('minimized');
+            icon.innerHTML = sidebar.classList.contains('minimized') ? "▶" : "◀";
+            setTimeout(() => { map.invalidateSize(); }, 400);
+        }
 
-        // Função para ícone customizado (Laranja vs Vermelho)
+        var map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
         function getIcon(color) {
             return L.divIcon({
                 className: 'custom-icon',
-                html: `<div style='background-color:${color}; height:18px; width:18px; border-radius:50%; border:2px solid white; box-shadow: 0 0 15px ${color}; transition: 0.5s;'></div>`,
-                iconSize: [18, 18], iconAnchor: [9, 9]
+                html: `<div style='background-color:${color}; height:16px; width:16px; border-radius:50%; border:2px solid white; box-shadow: 0 0 12px ${color}; transition: 0.5s;'></div>`,
+                iconSize: [16, 16], iconAnchor: [8, 8]
             });
         }
 
-        var marker = L.marker([-23.4332, -45.0711], {icon: getIcon('#FF8C00')}).addTo(map)
-            .bindPopup('<b>Kappo Tracking</b><br>Karice E-Bike #01');
+        var marker = L.marker([-23.4332, -45.0711], {icon: getIcon('#FF8C00')}).addTo(map);
 
-        // Lógica de Estado (Bloqueado vs Ativo) - Módulo Marketing
         function setEstado(bloquear) {
             const body = document.getElementById('mainBody');
             const pill = document.getElementById('statusPill');
-            
             if(bloquear) {
                 body.classList.add('bloqueado');
                 pill.innerHTML = "● MOTOR BLOQUEADO";
                 marker.setIcon(getIcon('#FF0000'));
-                alert("COMANDO DE SEGURANÇA: Bloqueio H02 enviado.");
             } else {
                 body.classList.remove('bloqueado');
                 pill.innerHTML = "● MONITORAMENTO ATIVO";
                 marker.setIcon(getIcon('#FF8C00'));
-                alert("COMANDO DE SEGURANÇA: Motor liberado.");
             }
         }
 
-        // Movimento Suave Simulado (Custo Zero - Ubatuba)
         function simular() {
             if(!document.getElementById('mainBody').classList.contains('bloqueado')) {
-                let lat = -23.4332 + (Math.random() - 0.5) * 0.003;
-                let lng = -45.0711 + (Math.random() - 0.5) * 0.003;
-                let speed = Math.floor(Math.random() * 30 + 10); // Velocidade de E-Bike
-
+                let lat = -23.4332 + (Math.random() - 0.5) * 0.002;
+                let lng = -45.0711 + (Math.random() - 0.5) * 0.002;
+                let speed = Math.floor(Math.random() * 25 + 5);
                 marker.setLatLng([lat, lng]);
                 document.getElementById('speed').innerHTML = `${speed} km/h`;
             } else {
@@ -159,7 +158,6 @@
             }
             setTimeout(simular, 3000); 
         }
-
         simular();
     </script>
 </body>
