@@ -216,14 +216,12 @@
 
         /* Erro UI */
         #errorMsg {
-            background: rgba(255, 59, 59, 0.15);
-            color: var(--red);
-            border: 1px solid rgba(255, 59, 59, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            font-size: 12px;
-            margin-bottom: 20px;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 13px;
+            margin-bottom: 24px;
             display: none;
+            line-height: 1.5;
         }
 
         /* Status bar */
@@ -273,7 +271,7 @@
                 </div>
                 <div>
                     <div class="feature-title">Bloqueio Remoto do Motor</div>
-                    <div class="feature-desc">Imobilize sue veiculo instantaneamente pelo app em caso de roubo.</div>
+                    <div class="feature-desc">Imobilize seu veículo instantaneamente pelo app em caso de roubo.</div>
                 </div>
             </div>
             <div class="feature-item">
@@ -383,7 +381,6 @@
     </div>
 
     <script>
-        // Configuração para o seu domínio seguro da Kappo Tracking
         const TRACCAR_URL = 'https://api.kappotracking.com.br'; 
 
         function togglePass() {
@@ -398,7 +395,12 @@
             const email = document.getElementById('user').value;
             const password = document.getElementById('pass').value;
 
+            // Reset do estado da caixinha de erro
             errorDiv.style.display = 'none';
+            errorDiv.style.background = 'rgba(255, 59, 59, 0.15)';
+            errorDiv.style.color = 'var(--red)';
+            errorDiv.style.border = '1px solid rgba(255, 59, 59, 0.3)';
+
             btn.textContent = 'Autenticando...';
             btn.disabled = true;
 
@@ -415,14 +417,50 @@
 
                 if (response.ok) {
                     const userData = await response.json();
+                    
+                    // Checagem de segurança extra: se o Traccar carregar o usuário como desativado (inadimplência)
+                    if (userData.disabled === true) {
+                        throw new Error('inadimplente');
+                    }
+
                     localStorage.setItem('kappo_user', JSON.stringify(userData));
                     window.location.href = 'dashboard.html';
+
+                } else if (response.status === 401) {
+                    // Erro 401 é quando a Amazon não deixa logar. Pode ser senha errada ou usuário desativado!
+                    throw new Error('inadimplente');
                 } else {
-                    throw new Error('Falha no login. Verifique e-mail e senha.');
+                    throw new Error('erro_comum');
                 }
+
             } catch (error) {
-                errorDiv.textContent = error.message;
                 errorDiv.style.display = 'block';
+
+                if (error.message === 'inadimplente') {
+                    // MUDANÇA VISUAL PARA A TELA DE INADIMPLÊNCIA KAPPPO
+                    errorDiv.style.background = 'rgba(255, 140, 0, 0.15)'; // Fundo laranja fumê
+                    errorDiv.style.color = '#FFFFFF';
+                    errorDiv.style.border = '1px solid rgba(255, 140, 0, 0.4)';
+                    
+                    errorDiv.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 16px;">⚠️</span>
+                                <strong style="font-family: 'Rajdhani', sans-serif; font-size: 14px; letter-spacing: 1px; color: var(--orange);">CONTA SUSPENSA OU INCORRETA</strong>
+                            </div>
+                            <span style="font-size: 12px; opacity: 0.9;">Não foi possível validar seu acesso. Verifique suas credenciais ou entre em contato com nossa central de atendimento.</span>
+                            
+                            <a href="https://api.whatsapp.com/send?phone=5512991917447&text=Olá!%20Meu%20painel%20Kappo%20Tracking%20está%20suspenso.%20Gostaria%20de%20verificar%20minha%20mensalidade." 
+                               target="_blank" 
+                               style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #25D366; color: #fff; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 700; font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; font-size: 12px; transition: transform 0.2s;">
+                               💬 Falar com Suporte (Financeiro)
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    errorDiv.textContent = 'Falha de conexão. Verifique suas credenciais e internet.';
+                }
+
                 btn.textContent = 'Acessar Monitoramento';
                 btn.disabled = false;
             }
