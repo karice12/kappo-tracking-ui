@@ -124,4 +124,43 @@
             });
         }
 
-        var marker = L.marker([-23
+        var marker = L.marker([-23.4332, -45.0711], {icon: getIcon('#FF8C00')}).addTo(map)
+            .bindPopup('<b>Kappo Tracking</b><br>Karice E-Bike #01');
+
+        // Lógica de Estado (Bloqueado vs Ativo) - Módulo Marketing
+        function setEstado(bloquear) {
+            const body = document.getElementById('mainBody');
+            const pill = document.getElementById('statusPill');
+            
+            if(bloquear) {
+                body.classList.add('bloqueado');
+                pill.innerHTML = "● MOTOR BLOQUEADO";
+                marker.setIcon(getIcon('#FF0000'));
+                alert("COMANDO DE SEGURANÇA: Bloqueio H02 enviado.");
+            } else {
+                body.classList.remove('bloqueado');
+                pill.innerHTML = "● MONITORAMENTO ATIVO";
+                marker.setIcon(getIcon('#FF8C00'));
+                alert("COMANDO DE SEGURANÇA: Motor liberado.");
+            }
+        }
+
+        // Movimento Suave Simulado (Custo Zero - Ubatuba)
+        function simular() {
+            if(!document.getElementById('mainBody').classList.contains('bloqueado')) {
+                let lat = -23.4332 + (Math.random() - 0.5) * 0.003;
+                let lng = -45.0711 + (Math.random() - 0.5) * 0.003;
+                let speed = Math.floor(Math.random() * 30 + 10); // Velocidade de E-Bike
+
+                marker.setLatLng([lat, lng]);
+                document.getElementById('speed').innerHTML = `${speed} km/h`;
+            } else {
+                document.getElementById('speed').innerHTML = `0 km/h`;
+            }
+            setTimeout(simular, 3000); 
+        }
+
+        simular();
+    </script>
+</body>
+</html>
