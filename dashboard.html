@@ -6,63 +6,66 @@
     <title>Kappo Tracking | Painel de Controle</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { background-color: #121212; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { background-color: #121212; color: #FFFFFF; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.5s; }
         .sidebar { width: 320px; background-color: #1E1E1E; border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; z-index: 1000; overflow-y: auto; }
         .bike-card { background: #2D2D2D; padding: 15px; border-radius: 12px; border-left: 5px solid #FF8C00; margin-bottom: 20px; }
         .status-pill { background: #00FF0033; color: #00FF00; padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
         
-        /* Estilo da Aba de Histórico */
+        /* Estilo Bloqueado (Alerta) */
+        body.bloqueado { background-color: #2b0000; }
+        body.bloqueado .status-pill { background: #ff000033; color: #ff4444; }
+        body.bloqueado .bike-card { border-left-color: #ff0000; }
+
         .history-section { margin-top: 20px; border-top: 1px solid #333; pt-4; }
         .history-title { font-size: 12px; color: #FF8C00; font-weight: bold; margin: 15px 0 10px 0; text-transform: uppercase; }
-        .history-item { font-size: 11px; padding: 10px; border-bottom: 1px solid #2a2a2a; color: #ccc; display: flex; justify-content: space-between; }
-        .history-item:last-child { border: none; }
-        .history-time { color: #888; font-weight: normal; }
+        .history-item { font-size: 11px; padding: 10px; border-bottom: 1px solid #2a2a2a; color: #ccc; }
+        .history-meta { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .history-date { color: #666; font-size: 9px; }
 
-        #map { flex-grow: 1; height: 100vh; }
+        #map { flex-grow: 1; height: 100vh; transition: filter 0.5s; }
+        body.bloqueado #map { filter: grayscale(1) sepia(1) hue-rotate(-50deg); }
+
         .overlay-info { position: absolute; top: 20px; right: 20px; background: rgba(30, 30, 30, 0.9); padding: 20px; border-radius: 15px; border: 1px solid #444; width: 200px; z-index: 1000; text-align: center; }
         
-        /* Botões de Comando */
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
         .btn { border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 11px; transition: 0.3s; text-transform: uppercase; }
         .btn-lock { background: #FF4444; color: white; }
         .btn-unlock { background: #00e054; color: black; }
-        .btn:hover { opacity: 0.8; transform: scale(1.02); }
+        .btn:hover { opacity: 0.8; transform: scale(1.05); }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
     <div class="sidebar">
         <h2 style="color: #FF8C00; margin-top: 0;">Kappo Tracking</h2>
         
         <div class="bike-card">
-            <div class="status-pill">● SISTEMA ATIVO</div>
+            <div id="statusPill" class="status-pill">● SISTEMA ATIVO</div>
             <div style="font-weight: bold;">E-Bike Karice #01</div>
             <div style="font-size: 12px; color: #888;">Hardware: ST-901 4G</div>
         </div>
 
         <div class="history-section">
-            <div class="history-title">🕒 Histórico Recente (3 dias)</div>
-            <div id="history-list">
-                </div>
+            <div class="history-title">🕒 Histórico (Últimas 72h)</div>
+            <div id="history-list"></div>
         </div>
 
         <div style="margin-top: auto; font-size: 10px; color: #555; text-align: center; padding-top: 20px;">
-            UBATUBA/SP - MONITORAMENTO REAL-TIME
+            SISTEMA DE PROTOTIPAGEM ONLINE<br>UBATUBA/SP - 2026
         </div>
     </div>
 
     <div id="map"></div>
 
     <div class="overlay-info">
-        <div style="font-size: 11px; color: #888; margin-bottom: 5px;">VELOCIDADE ATUAL</div>
+        <div style="font-size: 11px; color: #888;">VELOCIDADE</div>
         <div id="speed" style="font-size: 24px; font-weight: bold; color: #FF8C00;">0 km/h</div>
         <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
         
         <div class="btn-group">
-            <button class="btn btn-lock" onclick="comando('BLOQUEIO')">Bloquear</button>
-            <button class="btn btn-unlock" onclick="comando('DESBLOQUEIO')">Liberar</button>
+            <button class="btn btn-lock" onclick="setEstado(true)">Bloquear</button>
+            <button class="btn btn-unlock" onclick="setEstado(false)">Liberar</button>
         </div>
-        <p style="font-size: 9px; color: #666; margin-top: 10px;">Comandos via GPRS/SMS</p>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -70,57 +73,72 @@
         var map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        var bikeIcon = L.divIcon({
-            className: 'custom-div-icon',
-            html: "<div style='background-color:#FF8C00; height:16px; width:16px; border-radius:50%; border:2px solid white; box-shadow: 0 0 15px #FF8C00;'></div>",
-            iconSize: [16, 16],
-            iconAnchor: [8, 8]
-        });
+        // Função para criar o ícone que muda de cor
+        function getIcon(color) {
+            return L.divIcon({
+                className: 'custom-icon',
+                html: `<div style='background-color:${color}; height:18px; width:18px; border-radius:50%; border:2px solid white; box-shadow: 0 0 15px ${color}; transition: 0.5s;'></div>`,
+                iconSize: [18, 18], iconAnchor: [9, 9]
+            });
+        }
 
-        var marker = L.marker([-23.4332, -45.0711], {icon: bikeIcon}).addTo(map);
+        var marker = L.marker([-23.4332, -45.0711], {icon: getIcon('#FF8C00')}).addTo(map);
 
-        // --- LÓGICA DE HISTÓRICO E SIMULAÇÃO ---
-        const locaisUbatuba = ["Praia do Itaguá", "Orla do Cruzeiro", "Perequê-Açú", "Rua das Flores", "Av. Iperoig"];
-        
-        function adicionarAoHistorico() {
-            const lista = document.getElementById('history-list');
-            const agora = new Date();
-            const hora = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0');
-            const local = locaisUbatuba[Math.floor(Math.random() * locaisUbatuba.length)];
-
-            // Criar o item de histórico
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerHTML = `<span>${local}</span> <span class="history-time">${hora}</span>`;
-
-            // Adiciona no topo da lista
-            lista.prepend(item);
-
-            // Simulação de limite: Se tiver mais de 5 itens no protótipo, apaga o último
-            // No sistema real, faríamos a checagem por DATA (3 dias)
-            if (lista.children.length > 5) {
-                lista.removeChild(lista.lastChild);
+        // Lógica de Estado (Bloqueado vs Ativo)
+        function setEstado(bloquear) {
+            const body = document.getElementById('mainBody');
+            const pill = document.getElementById('statusPill');
+            
+            if(bloquear) {
+                body.classList.add('bloqueado');
+                pill.innerHTML = "● VEÍCULO BLOQUEADO";
+                marker.setIcon(getIcon('#FF0000')); // Muda pino para vermelho
+                alert("COMANDO SMS ENVIADO: Bloqueio ativado via relé.");
+            } else {
+                body.classList.remove('bloqueado');
+                pill.innerHTML = "● SISTEMA ATIVO";
+                marker.setIcon(getIcon('#FF8C00')); // Volta para laranja
+                alert("COMANDO SMS ENVIADO: Motor liberado.");
             }
         }
 
+        // Histórico Simulado de 3 dias
+        function carregarHistorico() {
+            const lista = document.getElementById('history-list');
+            const dados = [
+                { local: "Orla do Itaguá", data: "Hoje", hora: "10:45" },
+                { local: "Centro - Banco Itaú", data: "Ontem", hora: "16:20" },
+                { local: "Praia Vermelha do Norte", data: "24 Mar", hora: "09:15" },
+                { local: "Posto Ipiranga Centro", data: "23 Mar", hora: "19:30" }
+            ];
+
+            lista.innerHTML = dados.map(item => `
+                <div class="history-item">
+                    <div class="history-meta">
+                        <strong>${item.local}</strong>
+                        <span class="history-date">${item.data}</span>
+                    </div>
+                    <div style="color: #888;">Visto às ${item.hora}</div>
+                </div>
+            `).join('');
+        }
+
+        // Movimento Suave Simulado
         function simular() {
-            let lat = -23.4332 + (Math.random() - 0.5) * 0.005;
-            let lng = -45.0711 + (Math.random() - 0.5) * 0.005;
-            let speed = Math.floor(Math.random() * 40);
+            if(!document.getElementById('mainBody').classList.contains('bloqueado')) {
+                let lat = -23.4332 + (Math.random() - 0.5) * 0.003;
+                let lng = -45.0711 + (Math.random() - 0.5) * 0.003;
+                let speed = Math.floor(Math.random() * 35);
 
-            marker.setLatLng([lat, lng]);
-            document.getElementById('speed').innerHTML = `${speed} km/h`;
-            
-            // Adiciona um ponto no histórico a cada 10 segundos
-            adicionarAoHistorico();
-
-            setTimeout(simular, 10000); 
+                marker.setLatLng([lat, lng]);
+                document.getElementById('speed').innerHTML = `${speed} km/h`;
+            } else {
+                document.getElementById('speed').innerHTML = `0 km/h`;
+            }
+            setTimeout(simular, 4000); 
         }
 
-        function comando(tipo) {
-            alert(`ENVIANDO COMANDO DE ${tipo}...\nStatus: Sucesso via Protocolo SinoTrack.`);
-        }
-
+        carregarHistorico();
         simular();
     </script>
 </body>
