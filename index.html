@@ -1,84 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Kappo Tracking Ubatuba</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Configuração rápida de cores customizadas para a Kappo
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        kappoMain: '#00e054', // Um verde/neon para detalhes
-                        kappoDark: '#111827', // Fundo quase preto
-                        kappoCard: '#1f2937'  // Fundo dos cards (cinza escuro)
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Kappo Tracking | E-bike Security</title>
     <style>
-        /* Um pequeno ajuste para garantir que o fundo ocupe a tela toda */
-        body { background-color: #111827; }
+        body {
+            /* Imagem de fundo temática (Estrada/Tecnologia) */
+            background: linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 0.8)), 
+                        url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #FFFFFF;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background-color: rgba(30, 30, 30, 0.95); /* Leve transparência para estilo premium */
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            text-align: center;
+            border-top: 6px solid #FF8C00; /* Nosso Laranja Stealth */
+            width: 340px;
+            backdrop-filter: blur(5px); /* Efeito de vidro fosco */
+        }
+        h1 { 
+            color: #FF8C00; 
+            margin-bottom: 5px; 
+            font-size: 28px; 
+            letter-spacing: -1px;
+            text-transform: uppercase;
+        }
+        p { color: #B0B0B0; font-size: 13px; margin-bottom: 30px; line-height: 1.4; }
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            background: #2D2D2D;
+            border: 1px solid #454545;
+            border-radius: 8px;
+            color: white;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input:focus { border-color: #FF8C00; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #FF8C00;
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        button:hover { 
+            background-color: #FFA500; 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4);
+        }
+        .footer-text {
+            margin-top: 25px;
+            font-size: 11px;
+            color: #666;
+        }
     </style>
 </head>
-<body class="text-gray-100 flex items-center justify-center min-h-screen">
-
-    <div class="bg-kappoCard p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
-        
-        <div class="text-center mb-10">
-            <div class="inline-block p-4 rounded-full bg-gray-700/50 mb-4 border border-kappoMain/30">
-                <span class="text-5xl">📡</span>
-            </div>
-            <h1 class="text-4xl font-extrabold text-white tracking-tighter">
-                Kappo<span class="text-kappoMain">Tracking</span>
-            </div>
-            </h1>
-            <p class="text-gray-400 mt-2 text-sm">Segurança veicular em Ubatuba</p>
-        </div>
-
-        <form id="loginForm" class="space-y-6">
-            
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-300 mb-1">E-mail do Cliente</label>
-                <input type="email" id="email" name="email" required
-                    class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-kappoMain focus:border-kappoMain outline-none transition duration-150"
-                    placeholder="exemplo@email.com">
-            </div>
-
-            <div>
-                <div class="flex items-center justify-between mb-1">
-                    <label for="password" class="block text-sm font-medium text-gray-300">Senha Segura</label>
-                    <a href="#" class="text-xs text-kappoMain hover:underline">Esqueceu a senha?</a>
-                </div>
-                <input type="password" id="password" name="password" required
-                    class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-kappoMain focus:border-kappoMain outline-none transition duration-150"
-                    placeholder="••••••••">
-            </div>
-
-            <div>
-                <button type="submit"
-                    class="w-full bg-kappoMain text-gray-900 font-bold py-3 px-6 rounded-xl hover:bg-green-400 transform hover:scale-[1.02] transition duration-150 shadow-lg shadow-kappoMain/20">
-                    Acessar Meu Veículo
-                </button>
-            </div>
-        </form>
-
-            <div class="mt-10 text-center text-xs text-gray-500 space-y-2">
-            <p>Precisa de ajuda ou instalação? <a href="#" class="text-kappoMain hover:underline">Fale com o Suporte Kappo</a></p>
-            <p class="border-t border-gray-800 pt-3">&copy; 2026 Kappo Tracking - Ubatuba/SP. Proteção com tecnologia SinoTrack.</p>
-        </div>
-
+<body>
+    <div class="login-card">
+        <h1>Kappo Tracking</h1>
+        <p>Segurança Avançada para sua E-bike<br><strong>Ubatuba • SP</strong></p>
+        <input type="text" placeholder="Seu usuário">
+        <input type="password" placeholder="Sua senha">
+        <button onclick="window.location.href='dashboard.html'">Acessar Monitoramento</button>
+        <div class="footer-text">© 2026 Kappo Tracking - Intelligent Security</div>
     </div>
-
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Impede a página de recarregar
-            alert('Excelente, Chefe! O formulário de login foi criado. No próximo passo, vamos configurar o JavaScript para conectar isso ao servidor Traccar!');
-        });
-    </script>
-
 </body>
 </html>
