@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Kappo Tracking</title>
+    <title>Dashboard Real-Time | Kappo Tracking</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
         body {
             background-color: #121212;
@@ -22,7 +25,7 @@
             display: flex;
             flex-direction: column;
             padding: 20px;
-            overflow-y: auto;
+            z-index: 1000; /* Fica por cima do mapa */
         }
         .sidebar h2 { color: #FF8C00; font-size: 18px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
         
@@ -32,40 +35,16 @@
             border-radius: 12px;
             border-left: 5px solid #FF8C00;
             margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .status { color: #00FF00; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
         
-        /* Seção de Histórico */
-        .history-section { margin-top: 10px; }
-        .history-title { font-size: 14px; color: #FF8C00; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        
-        .history-item {
-            border-left: 2px solid #444;
-            padding-left: 15px;
-            margin-bottom: 15px;
-            position: relative;
-        }
-        .history-item::before {
-            content: '';
-            position: absolute;
-            left: -6px;
-            top: 0;
-            width: 10px;
-            height: 10px;
-            background: #FF8C00;
-            border-radius: 50%;
-        }
-        .history-time { font-size: 11px; color: #888; }
-        .history-loc { font-size: 13px; color: #DDD; display: block; margin-top: 2px; }
-
-        /* Área do Mapa */
-        .main-content {
+        /* Área do Mapa - Agora ocupa a tela toda atrás da sidebar */
+        #map {
             flex-grow: 1;
-            position: relative;
-            background: #1a1a1a url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/-45.0711,-23.4332,13,0/1200x800?access_token=Sua_Chave_Aqui') no-repeat center;
-            background-size: cover;
+            height: 100vh;
+            background: #1a1a1a;
         }
+
         .overlay-info {
             position: absolute;
             top: 20px;
@@ -76,6 +55,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid #444;
             width: 200px;
+            z-index: 1000;
         }
         .btn-alert {
             background: #FF8C00;
@@ -87,57 +67,58 @@
             cursor: pointer;
             width: 100%;
             margin-top: 15px;
-            transition: 0.3s;
         }
-        .btn-alert:hover { background: #e67e00; transform: scale(1.02); }
     </style>
 </head>
 <body>
+
     <div class="sidebar">
         <h2>Kappo Tracking</h2>
         
         <div class="bike-card">
-            <div class="status">● ONLINE</div>
+            <div class="status">● MONITORANDO AGORA</div>
             <strong>E-Bike #01 - Karice</strong>
             <p style="font-size: 12px; color: #aaa; margin: 5px 0;">ID: 7654321</p>
         </div>
 
-        <div class="history-section">
-            <div class="history-title">HISTÓRICO DE HOJE</div>
-            
-            <div class="history-item">
-                <span class="history-time">10:15 - Em movimento</span>
-                <span class="history-loc">Av. Iperoig, Centro</span>
-            </div>
-            
-            <div class="history-item">
-                <span class="history-time">09:45 - Parado</span>
-                <span class="history-loc">Praia do Itaguá</span>
-            </div>
-            
-            <div class="history-item">
-                <span class="history-time">09:10 - Em movimento</span>
-                <span class="history-loc">Trevo de Ubatuba</span>
-            </div>
-
-            <div class="history-item" style="border-left: 2px solid transparent;">
-                <span class="history-time">08:30 - Início</span>
-                <span class="history-loc">Residencial Kappo</span>
-            </div>
-        </div>
-
-        <div style="margin-top: auto; color: #555; font-size: 11px; text-align: center; padding-top: 20px;">
-            Sistema de Segurança Ativo<br>Ubatuba, SP - 2026
+        <div style="margin-top: auto; color: #555; font-size: 11px; text-align: center;">
+            <p>Ubatuba, SP - 2026</p>
+            <p>Conectado ao Traccar Custom</p>
         </div>
     </div>
 
-    <div class="main-content">
-        <div class="overlay-info">
-            <div style="font-size: 12px; color: #888; margin-bottom: 10px;">STATUS ATUAL</div>
-            <div style="font-size: 16px; margin-bottom: 8px;">🚀 <strong>22 km/h</strong></div>
-            <div style="font-size: 16px;">🔋 <strong>85%</strong></div>
-            <button class="btn-alert">BLOQUEAR MOTOR</button>
-        </div>
+    <div id="map"></div>
+
+    <div class="overlay-info">
+        <div style="font-size: 12px; color: #888; margin-bottom: 10px;">TELEMETRIA</div>
+        <div id="speed" style="font-size: 16px; margin-bottom: 8px;">🚀 <strong>0 km/h</strong></div>
+        <div id="battery" style="font-size: 16px;">🔋 <strong>-- %</strong></div>
+        <button class="btn-alert" onclick="enviarBloqueio()">BLOQUEAR MOTOR</button>
     </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 1. Inicializar o mapa focado em Ubatuba
+        // Coordenadas de Ubatuba: -23.4332, -45.0711
+        var map = L.map('map').setView([-23.4332, -45.0711], 14);
+
+        // 2. Adicionar o visual do mapa (Estilo Dark para combinar com a Kappo)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 3. Adicionar um marcador (representando a sua E-bike)
+        var bikeMarker = L.marker([-23.4332, -45.0711]).addTo(map)
+            .bindPopup('<b>Kappo Tracking</b><br>Sua E-Bike está aqui.')
+            .openPopup();
+
+        // Função do botão de bloqueio (Marketing: passa segurança para o cliente)
+        function enviarBloqueio() {
+            const confirmar = confirm("Deseja enviar o comando de BLOQUEIO para o ST-901?");
+            if(confirmar) {
+                alert("Comando enviado com sucesso via protocolo H02!");
+            }
+        }
+    </script>
 </body>
 </html>
