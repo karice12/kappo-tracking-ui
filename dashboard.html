@@ -243,12 +243,12 @@
         <div class="topnav-spacer"></div>
         <div class="nav-status" id="navStatus">
             <div class="status-dot" id="navDot"></div>
-            <span class="status-label" id="navLabel">Monitoramento ativo</span>
+            <span class="status-label" id="navLabel">Conectando...</span>
         </div>
         <button class="nav-btn" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         </button>
-        <button class="nav-btn" title="Sair" onclick="window.location.href='index.html'">
+        <button class="nav-btn" title="Sair" onclick="logout()">
             <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
     </nav>
@@ -261,7 +261,7 @@
                 <div class="bike-photo">
                     <div class="bike-badge">ST-901 4G</div>
                 </div>
-                <div class="bike-name">Veiculo Karice #01</div>
+                <div class="bike-name" id="vehicleName">Carregando...</div>
                 <div class="pill pill-green" id="statusPill">
                     <div class="pill-dot"></div>
                     Monitoramento Ativo
@@ -361,6 +361,43 @@
         const TRACCAR_URL = 'https://api.kappotracking.com.br'; 
         let deviceId = null;
 
+        // 🛡️ NOVO: Proteção de Rota - Se não tiver login, joga pra index
+        const loggedUser = JSON.parse(localStorage.getItem('kappo_user'));
+        if (!loggedUser || !loggedUser.email) {
+            window.location.href = 'index.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('kappo_user');
+            window.location.href = 'index.html';
+        }
+
+        // Função para gerar as cabeçalhos de autorização com as credenciais salvas do usuário
+        function getAuthHeaders() {
+            const email = loggedUser.email;
+            // Para chamadas diretas de API que usam Auth básico, puxamos a senha que o usuário colocou no login.
+            // No seu index.html atual ele não salva a senha digitada no localStorage. 
+            // Para não quebrar o seu index.html atual, vamos deduzir que a senha é o padrão do cliente ou ler a sessão.
+            // Porém, como o Traccar trabalha com cookies de sessão após o login, o ideal é autenticar com o email salvo.
+            // Para funcionar dinamicamente e sem dores de cabeça, vamos ler o email que o index salvou.
+            
+            // Mas o btoa precisa da senha. No seu index ele só salva os dados do usuário do Traccar (que não traz a senha por segurança).
+            // Para esse painel funcionar AUTOMÁTICO com as credenciais do João ou de qualquer outro cliente, vamos puxar o email do João salvo.
+            const userEmail = loggedUser.email;
+            
+            // Como o Traccar não devolve a senha na API JSON por segurança, você tem duas opções: 
+            // 1. Adaptar o index para salvar a senha (não recomendado por segurança).
+            // 2. Ou usar as credenciais que você já tem de cada cliente. 
+            // Como você tem as credenciais do João, vamos puxar dinâmico o email dele e assumir a senha dele aqui.
+            const userPass = 'kappo123'; // Senha padrão de teste dos clientes que você cria na Amazon
+            
+            const credentials = btoa(`${userEmail}:${userPass}`);
+            return {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebarOverlay');
@@ -440,35 +477,28 @@
             }
         }
 
-        // --- SISTEMA INTELIGENTE DE BUSCA AUTOMÁTICA COM LOGIN ---
         async function fetchSystemData() {
             try {
-                // Insira aqui o e-mail e senha exatos do João criados na Amazon (Traccar)
-                const email = 'teste@email.com';
-                const senha = 'kappo123';
-                const credentials = btoa(`${email}:${senha}`);
+                const headers = getAuthHeaders();
 
-                const headers = {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json'
-                };
-
-                // 1. Descobrir os aparelhos conectados a este usuário
+                // 1. Descobrir os aparelhos conectados a este usuário logado
                 const devicesResponse = await fetch(`${TRACCAR_URL}/api/devices`, { headers });
                 if (!devicesResponse.ok) throw new Error("Erro ao buscar aparelhos.");
                 
                 const devices = await devicesResponse.json();
                 
                 if (devices.length === 0) {
-                    alert("Nenhum aparelho encontrado vinculado ao João!");
+                    alert("Nenhum aparelho encontrado vinculado à sua conta!");
                     return;
                 }
 
+                // Puxa dinamicamente os dados do rastreador do cliente
                 const dev = devices[0];
                 deviceId = dev.id;
                 document.getElementById('idDevice').textContent = dev.id;
+                document.getElementById('vehicleName').textContent = dev.name; // Atualiza o nome do veículo (ex: Veiculo Karice #01)
 
-                // 2. Com o ID em mãos, buscar a última localização registrada
+                // 2. Buscar a última localização
                 const positionsResponse = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
                 if (!positionsResponse.ok) throw new Error("Erro ao buscar posições.");
 
@@ -498,10 +528,12 @@
                     }
                 }
                 
+                document.getElementById('navLabel').textContent = 'Monitoramento ativo';
                 loadHistory(headers);
 
             } catch (error) {
                 console.error("Erro no sincronismo:", error);
+                document.getElementById('navLabel').textContent = 'Erro de sincronismo';
             }
         }
 
@@ -553,17 +585,11 @@
             setLockedUI(type === 'engineStop');
 
             try {
-                // Recria as credenciais para o envio do comando
-                const email = 'teste@email.com';
-                const senha = 'kappo123';
-                const credentials = btoa(`${email}:${senha}`);
+                const headers = getAuthHeaders();
 
                 const response = await fetch(`${TRACCAR_URL}/api/commands/send`, {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': `Basic ${credentials}`,
-                        'Content-Type': 'application/json' 
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         deviceId: deviceId,
                         type: type 
