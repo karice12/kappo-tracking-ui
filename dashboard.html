@@ -317,7 +317,7 @@
 
             <div class="history">
                 <div class="history-title">🕒 Histórico de Locais</div>
-                <div id="historyList"></div>
+                <div id="historyList">Carregando histórico...</div>
             </div>
         </aside>
 
@@ -361,7 +361,6 @@
         const TRACCAR_URL = 'https://api.kappotracking.com.br'; 
         let deviceId = null;
 
-        // 🛡️ NOVO: Proteção de Rota - Se não tiver login, joga pra index
         const loggedUser = JSON.parse(localStorage.getItem('kappo_user'));
         if (!loggedUser || !loggedUser.email) {
             window.location.href = 'index.html';
@@ -372,25 +371,9 @@
             window.location.href = 'index.html';
         }
 
-        // Função para gerar as cabeçalhos de autorização com as credenciais salvas do usuário
         function getAuthHeaders() {
-            const email = loggedUser.email;
-            // Para chamadas diretas de API que usam Auth básico, puxamos a senha que o usuário colocou no login.
-            // No seu index.html atual ele não salva a senha digitada no localStorage. 
-            // Para não quebrar o seu index.html atual, vamos deduzir que a senha é o padrão do cliente ou ler a sessão.
-            // Porém, como o Traccar trabalha com cookies de sessão após o login, o ideal é autenticar com o email salvo.
-            // Para funcionar dinamicamente e sem dores de cabeça, vamos ler o email que o index salvou.
-            
-            // Mas o btoa precisa da senha. No seu index ele só salva os dados do usuário do Traccar (que não traz a senha por segurança).
-            // Para esse painel funcionar AUTOMÁTICO com as credenciais do João ou de qualquer outro cliente, vamos puxar o email do João salvo.
             const userEmail = loggedUser.email;
-            
-            // Como o Traccar não devolve a senha na API JSON por segurança, você tem duas opções: 
-            // 1. Adaptar o index para salvar a senha (não recomendado por segurança).
-            // 2. Ou usar as credenciais que você já tem de cada cliente. 
-            // Como você tem as credenciais do João, vamos puxar dinâmico o email dele e assumir a senha dele aqui.
-            const userPass = 'kappo123'; // Senha padrão de teste dos clientes que você cria na Amazon
-            
+            const userPass = 'kappo123'; 
             const credentials = btoa(`${userEmail}:${userPass}`);
             return {
                 'Authorization': `Basic ${credentials}`,
@@ -481,7 +464,6 @@
             try {
                 const headers = getAuthHeaders();
 
-                // 1. Descobrir os aparelhos conectados a este usuário logado
                 const devicesResponse = await fetch(`${TRACCAR_URL}/api/devices`, { headers });
                 if (!devicesResponse.ok) throw new Error("Erro ao buscar aparelhos.");
                 
@@ -492,13 +474,11 @@
                     return;
                 }
 
-                // Puxa dinamicamente os dados do rastreador do cliente
                 const dev = devices[0];
                 deviceId = dev.id;
                 document.getElementById('idDevice').textContent = dev.id;
-                document.getElementById('vehicleName').textContent = dev.name; // Atualiza o nome do veículo (ex: Veiculo Karice #01)
+                document.getElementById('vehicleName').textContent = dev.name;
 
-                // 2. Buscar a última localização
                 const positionsResponse = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
                 if (!positionsResponse.ok) throw new Error("Erro ao buscar posições.");
 
@@ -539,11 +519,18 @@
 
         async function getAddressName(lat, lng) {
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                // Tentativa de traduzir a rua com OpenStreetMap
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+                    headers: { 'Accept-Language': 'pt-BR' }
+                });
                 const data = await response.json();
-                return data.display_name.split(',')[0];
+                if (data && data.address) {
+                    // Tenta puxar a rua, estrada ou rodovia
+                    return data.address.road || data.address.suburb || data.address.city || "Ubatuba, SP";
+                }
+                return `Ponto em Ubatuba`;
             } catch {
-                return "Rua de Ubatuba";
+                return `Rua em Ubatuba`;
             }
         }
 
@@ -554,22 +541,39 @@
                 const positions = await response.json();
                 
                 const histList = document.getElementById('historyList');
+                
+                if (positions.length === 0) {
+                    histList.innerHTML = 'Nenhum trajeto gravado hoje.';
+                    return;
+                }
+
                 histList.innerHTML = '';
 
-                const top3 = positions.slice(-3).reverse();
+                // Filtrar os 4 últimos pontos registrados
+                const topPonto = positions.slice(-4).reverse();
 
-                for (let i = 0; i < top3.length; i++) {
-                    const p = top3[i];
-                    const streetName = await getAddressName(p.latitude, p.longitude);
+                for (let i = 0; i < topPonto.length; i++) {
+                    const p = topPonto[i];
                     const time = new Date(p.fixTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
+                    
+                    // Coloca uma mensagem de "Buscando rua" temporária para não deixar a lista vazia no carregamento
+                    const itemId = `hist-item-${i}`;
+                    
                     histList.innerHTML += `
                         <div class="hist-item">
                             <div class="hist-dot ${i === 0 ? 'recent' : ''}"></div>
-                            <div class="hist-name">${streetName}</div>
+                            <div class="hist-name" id="${itemId}">Buscando endereço...</div>
                             <div class="hist-time">${time}</div>
                         </div>
                     `;
+
+                    // Pede ao tradutor do mapa pra ler a rua. Assim que ele ler, ele substitui na tela!
+                    getAddressName(p.latitude, p.longitude).then(street => {
+                        const label = document.getElementById(itemId);
+                        if (label) {
+                            label.textContent = street;
+                        }
+                    });
                 }
             } catch (e) {
                 console.log("Erro ao carregar histórico");
