@@ -440,11 +440,21 @@
             }
         }
 
-        // --- SISTEMA INTELIGENTE DE BUSCA AUTOMÁTICA DE ID E POSIÇÃO ---
+        // --- SISTEMA INTELIGENTE DE BUSCA AUTOMÁTICA COM LOGIN ---
         async function fetchSystemData() {
             try {
+                // Insira aqui o e-mail e senha exatos do João criados na Amazon (Traccar)
+                const email = 'teste@email.com';
+                const senha = 'kappo123';
+                const credentials = btoa(`${email}:${senha}`);
+
+                const headers = {
+                    'Authorization': `Basic ${credentials}`,
+                    'Content-Type': 'application/json'
+                };
+
                 // 1. Descobrir os aparelhos conectados a este usuário
-                const devicesResponse = await fetch(`${TRACCAR_URL}/api/devices`);
+                const devicesResponse = await fetch(`${TRACCAR_URL}/api/devices`, { headers });
                 if (!devicesResponse.ok) throw new Error("Erro ao buscar aparelhos.");
                 
                 const devices = await devicesResponse.json();
@@ -454,19 +464,18 @@
                     return;
                 }
 
-                // Salva o ID do primeiro aparelho encontrado
                 const dev = devices[0];
                 deviceId = dev.id;
                 document.getElementById('idDevice').textContent = dev.id;
 
                 // 2. Com o ID em mãos, buscar a última localização registrada
-                const positionsResponse = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`);
+                const positionsResponse = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
                 if (!positionsResponse.ok) throw new Error("Erro ao buscar posições.");
 
                 const positions = await positionsResponse.json();
 
                 if (positions.length > 0) {
-                    const pos = positions[positions.length - 1]; // Pegar a última
+                    const pos = positions[positions.length - 1]; 
                     
                     document.getElementById('coordLat').textContent = pos.latitude.toFixed(4);
                     document.getElementById('coordLng').textContent = pos.longitude.toFixed(4);
@@ -479,7 +488,7 @@
                     if (trail.length > 20) trail.shift();
                     polyline.setLatLngs(trail);
 
-                    const speedKmh = pos.speed * 1.852; // Milhas Náuticas para km/h
+                    const speedKmh = pos.speed * 1.852; 
                     updateSpeedUI(speedKmh);
 
                     if (pos.attributes && pos.attributes.batteryLevel) {
@@ -489,8 +498,7 @@
                     }
                 }
                 
-                // 3. Atualizar o histórico na tela
-                loadHistory();
+                loadHistory(headers);
 
             } catch (error) {
                 console.error("Erro no sincronismo:", error);
@@ -507,16 +515,15 @@
             }
         }
 
-        async function loadHistory() {
+        async function loadHistory(headers) {
             if (!deviceId) return;
             try {
-                const response = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`);
+                const response = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
                 const positions = await response.json();
                 
                 const histList = document.getElementById('historyList');
                 histList.innerHTML = '';
 
-                // Pegar os 3 últimos pontos
                 const top3 = positions.slice(-3).reverse();
 
                 for (let i = 0; i < top3.length; i++) {
@@ -546,9 +553,17 @@
             setLockedUI(type === 'engineStop');
 
             try {
+                // Recria as credenciais para o envio do comando
+                const email = 'teste@email.com';
+                const senha = 'kappo123';
+                const credentials = btoa(`${email}:${senha}`);
+
                 const response = await fetch(`${TRACCAR_URL}/api/commands/send`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/json' 
+                    },
                     body: JSON.stringify({
                         deviceId: deviceId,
                         type: type 
@@ -565,11 +580,7 @@
         }
 
         handleResize();
-        
-        // Dispara a leitura assim que o site abre
         fetchSystemData();
-
-        // Faz o site ir na Amazon buscar novos dados a cada 5 segundos de forma silenciosa!
         setInterval(fetchSystemData, 5000); 
     </script>
 </body>
