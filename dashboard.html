@@ -86,11 +86,12 @@
         .sidebar-overlay.visible { display: block; }
         @media(min-width:900px){ .sidebar-overlay { display: none !important; } }
 
+        /* --- ALTERAÇÃO AQUI: Foto mais compacta --- */
         .bike-card {
-            padding: 16px; border-bottom: 1px solid var(--border);
+            padding: 12px; border-bottom: 1px solid var(--border);
         }
         .bike-photo {
-            width: 100%; height: 120px; border-radius: 10px; overflow: hidden; margin-bottom: 12px;
+            width: 100%; height: 80px; border-radius: 8px; overflow: hidden; margin-bottom: 8px;
             background: var(--surface3);
             background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600');
             background-size: cover; background-position: center;
@@ -101,63 +102,64 @@
             background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%);
         }
         .bike-badge {
-            position: absolute; bottom: 8px; left: 8px; z-index: 1;
+            position: absolute; bottom: 6px; left: 6px; z-index: 1;
             background: rgba(0,0,0,0.7); border: 1px solid var(--border2);
-            padding: 3px 8px; border-radius: 4px;
-            font-size: 9px; color: #fff; letter-spacing: 1px; text-transform: uppercase;
+            padding: 2px 6px; border-radius: 4px;
+            font-size: 8px; color: #fff; letter-spacing: 1px; text-transform: uppercase;
             backdrop-filter: blur(8px);
         }
 
-        .bike-name { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .bike-name { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
         .pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
-            letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 600;
+            letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;
         }
         .pill-green { background: var(--green-dim); color: var(--green); }
         .pill-red { background: var(--red-dim); color: var(--red); }
-        .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 2s ease-in-out infinite; }
+        .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: blink 2s ease-in-out infinite; }
 
-        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        /* --- ALTERAÇÃO AQUI: Grid mais compacto --- */
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .detail-box {
             background: var(--surface2); border: 1px solid var(--border);
-            border-radius: 8px; padding: 10px;
+            border-radius: 6px; padding: 6px;
         }
-        .detail-box-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
-        .detail-box-value { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; color: #ddd; }
+        .detail-box-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px; }
+        .detail-box-value { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: #ddd; }
 
-        .controls { padding: 16px; border-bottom: 1px solid var(--border); }
-        .controls-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .controls { padding: 12px; border-bottom: 1px solid var(--border); }
+        .controls-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .ctrl-btn {
-            padding: 11px; border: 1px solid var(--border); border-radius: 8px;
-            font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+            padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px;
             text-transform: uppercase; cursor: pointer; transition: all 0.2s;
             display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .ctrl-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .ctrl-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
         .btn-lock { background: var(--red-dim); color: var(--red); border-color: rgba(255,59,59,0.2); }
         .btn-lock:hover { background: rgba(255,59,59,0.2); }
         .btn-unlock { background: var(--green-dim); color: var(--green); border-color: rgba(0,224,122,0.2); }
         .btn-unlock:hover { background: rgba(0,224,122,0.2); }
 
-        .stats-strip { padding: 16px; border-bottom: 1px solid var(--border); }
-        .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .stats-strip { padding: 12px; border-bottom: 1px solid var(--border); }
+        .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
         .stat-item:last-child { border-bottom: none; }
-        .stat-label { font-size: 11px; color: var(--muted2); }
-        .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; color: var(--orange); }
+        .stat-label { font-size: 10px; color: var(--muted2); }
+        .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: var(--orange); }
 
-        .history { padding: 16px; flex: 1; overflow-y: auto; }
-        .history-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .history { padding: 12px; flex: 1; overflow-y: auto; }
+        .history-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
         .hist-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 0; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 0; border-bottom: 1px solid var(--border);
         }
         .hist-item:last-child { border-bottom: none; }
-        .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--surface3); border: 2px solid var(--muted); flex-shrink: 0; }
+        .hist-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--surface3); border: 2px solid var(--muted); flex-shrink: 0; }
         .hist-dot.recent { border-color: var(--orange); background: var(--orange-dim); }
-        .hist-name { font-size: 12px; color: var(--muted2); flex: 1; }
-        .hist-time { font-size: 10px; color: var(--muted); font-family: 'Rajdhani', sans-serif; }
+        .hist-name { font-size: 11px; color: var(--muted2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-time { font-size: 9px; color: var(--muted); font-family: 'Rajdhani', sans-serif; }
 
         .map-area { flex: 1; position: relative; overflow: hidden; }
         #map { position: absolute; inset: 0; z-index: 1; }
@@ -176,43 +178,43 @@
         .lock-sub { font-size: 12px; color: var(--muted2); }
 
         .speed-widget {
-            position: absolute; top: 16px; right: 16px; z-index: 10;
+            position: absolute; top: 12px; right: 12px; z-index: 10;
             background: rgba(17,17,20,0.92); border: 1px solid var(--border2);
-            border-radius: 14px; padding: 16px 20px; min-width: 140px;
+            border-radius: 14px; padding: 12px 16px; min-width: 120px;
             backdrop-filter: blur(16px); text-align: center;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
-        .speed-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
-        .speed-value { font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 700; color: var(--orange); line-height: 1; }
-        .speed-unit { font-size: 11px; color: var(--muted2); margin-top: 2px; }
-        .speed-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+        .speed-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
+        .speed-value { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700; color: var(--orange); line-height: 1; }
+        .speed-unit { font-size: 10px; color: var(--muted2); margin-top: 1px; }
+        .speed-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 10px; overflow: hidden; }
         .speed-bar-fill { height: 100%; background: var(--orange); border-radius: 2px; width: 0%; transition: width 1s ease; }
 
         .coord-chip {
-            position: absolute; bottom: 16px; right: 16px; z-index: 10;
+            position: absolute; bottom: 12px; right: 12px; z-index: 10;
             background: rgba(17,17,20,0.92); border: 1px solid var(--border);
-            border-radius: 8px; padding: 8px 12px;
+            border-radius: 8px; padding: 6px 10px;
             backdrop-filter: blur(16px);
-            font-size: 10px; color: var(--muted2); font-family: 'Rajdhani', monospace; letter-spacing: 0.5px;
+            font-size: 9px; color: var(--muted2); font-family: 'Rajdhani', monospace; letter-spacing: 0.5px;
         }
         .coord-chip span { color: var(--orange); }
 
         .mobile-bottombar {
             display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
             background: rgba(17,17,20,0.95); border-top: 1px solid var(--border);
-            padding: 10px 16px; gap: 8px;
+            padding: 8px 12px; gap: 8px;
             backdrop-filter: blur(16px);
         }
         @media(max-width:899px){ .mobile-bottombar { display: flex; } }
         .mbb-speed {
             flex: 1; display: flex; flex-direction: column; justify-content: center;
         }
-        .mbb-speed-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-        .mbb-speed-val { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; color: var(--orange); line-height: 1.1; }
-        .mbb-btns { display: flex; gap: 8px; }
+        .mbb-speed-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+        .mbb-speed-val { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; color: var(--orange); line-height: 1.1; }
+        .mbb-btns { display: flex; gap: 6px; }
         .mbb-btn {
-            padding: 10px 16px; border: none; border-radius: 8px;
-            font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+            padding: 8px 12px; border: none; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
             text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
         }
         .mbb-lock { background: var(--red); color: #fff; }
@@ -268,26 +270,26 @@
                 </div>
                 <div class="detail-grid">
                     <div class="detail-box">
-                        <div class="detail-box-label">Hardware</div>
+                        <div class="detail-box-label">HW</div>
                         <div class="detail-box-value">ST-901</div>
                     </div>
                     <div class="detail-box">
                         <div class="detail-box-label">Rede</div>
-                        <div class="detail-box-value">4G LTE</div>
+                        <div class="detail-box-value">4G</div>
                     </div>
                     <div class="detail-box">
-                        <div class="detail-box-label">ID Local</div>
+                        <div class="detail-box-label">ID</div>
                         <div class="detail-box-value" id="idDevice">#</div>
                     </div>
                     <div class="detail-box">
-                        <div class="detail-box-label">Bateria</div>
+                        <div class="detail-box-label">Bat</div>
                         <div class="detail-box-value" id="sideBatery">-%</div>
                     </div>
                 </div>
             </div>
 
             <div class="controls">
-                <div class="controls-title">Controle Remoto</div>
+                <div class="controls-title">Controles</div>
                 <div class="btn-row">
                     <button class="ctrl-btn btn-lock" onclick="sendCommandToBike('engineStop')">
                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -519,13 +521,11 @@
 
         async function getAddressName(lat, lng) {
             try {
-                // Tentativa de traduzir a rua com OpenStreetMap
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
                     headers: { 'Accept-Language': 'pt-BR' }
                 });
                 const data = await response.json();
                 if (data && data.address) {
-                    // Tenta puxar a rua, estrada ou rodovia
                     return data.address.road || data.address.suburb || data.address.city || "Ubatuba, SP";
                 }
                 return `Ponto em Ubatuba`;
@@ -556,7 +556,6 @@
                     const p = topPonto[i];
                     const time = new Date(p.fixTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
-                    // Coloca uma mensagem de "Buscando rua" temporária para não deixar a lista vazia no carregamento
                     const itemId = `hist-item-${i}`;
                     
                     histList.innerHTML += `
@@ -567,7 +566,6 @@
                         </div>
                     `;
 
-                    // Pede ao tradutor do mapa pra ler a rua. Assim que ele ler, ele substitui na tela!
                     getAddressName(p.latitude, p.longitude).then(street => {
                         const label = document.getElementById(itemId);
                         if (label) {
