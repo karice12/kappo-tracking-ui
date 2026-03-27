@@ -243,7 +243,7 @@
         <div class="topnav-spacer"></div>
         <div class="nav-status" id="navStatus">
             <div class="status-dot" id="navDot"></div>
-            <span class="status-label" id="navLabel">Conectando...</span>
+            <span class="status-label" id="navLabel">Monitoramento ativo</span>
         </div>
         <button class="nav-btn" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -264,7 +264,7 @@
                 <div class="bike-name">Veiculo Karice #01</div>
                 <div class="pill pill-green" id="statusPill">
                     <div class="pill-dot"></div>
-                    Carregando...
+                    Monitoramento Ativo
                 </div>
                 <div class="detail-grid">
                     <div class="detail-box">
@@ -311,7 +311,7 @@
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Sinal GPS</span>
-                    <span class="stat-value" id="sideSignal" style="color:var(--orange)">Buscando</span>
+                    <span class="stat-value" id="sideSignal" style="color:var(--green)">Forte</span>
                 </div>
             </div>
 
@@ -329,7 +329,7 @@
                     <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
                 <div class="lock-title">Motor Bloqueado</div>
-                <div class="lock-sub">Veiculo imobilizada remotamente</div>
+                <div class="lock-sub">Veículo imobilizado remotamente</div>
             </div>
 
             <div class="speed-widget" id="speedWidget">
@@ -358,10 +358,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Configurações usando o domínio oficial kappotracking.com.br
         const TRACCAR_URL = 'https://api.kappotracking.com.br'; 
-        const TRACCAR_WS = 'wss://api.kappotracking.com.br/api/socket'; 
-
         let deviceId = null;
 
         function toggleSidebar() {
@@ -443,21 +440,33 @@
             }
         }
 
-        function startWebSocket() {
-            const ws = new WebSocket(TRACCAR_WS);
+        // --- SISTEMA INTELIGENTE DE BUSCA AUTOMÁTICA DE ID E POSIÇÃO ---
+        async function fetchSystemData() {
+            try {
+                // 1. Descobrir os aparelhos conectados a este usuário
+                const devicesResponse = await fetch(`${TRACCAR_URL}/api/devices`);
+                if (!devicesResponse.ok) throw new Error("Erro ao buscar aparelhos.");
+                
+                const devices = await devicesResponse.json();
+                
+                if (devices.length === 0) {
+                    alert("Nenhum aparelho encontrado vinculado ao João!");
+                    return;
+                }
 
-            ws.onopen = () => {
-                document.getElementById('navLabel').textContent = 'Monitoramento ativo';
-                document.getElementById('sideSignal').textContent = 'Forte';
-                document.getElementById('sideSignal').style.color = 'var(--green)';
-                loadHistory();
-            };
+                // Salva o ID do primeiro aparelho encontrado
+                const dev = devices[0];
+                deviceId = dev.id;
+                document.getElementById('idDevice').textContent = dev.id;
 
-            ws.onmessage = async (event) => {
-                const data = JSON.parse(event.data);
+                // 2. Com o ID em mãos, buscar a última localização registrada
+                const positionsResponse = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`);
+                if (!positionsResponse.ok) throw new Error("Erro ao buscar posições.");
 
-                if (data.positions && data.positions.length > 0) {
-                    const pos = data.positions[data.positions.length - 1];
+                const positions = await positionsResponse.json();
+
+                if (positions.length > 0) {
+                    const pos = positions[positions.length - 1]; // Pegar a última
                     
                     document.getElementById('coordLat').textContent = pos.latitude.toFixed(4);
                     document.getElementById('coordLng').textContent = pos.longitude.toFixed(4);
@@ -470,30 +479,22 @@
                     if (trail.length > 20) trail.shift();
                     polyline.setLatLngs(trail);
 
-                    const speedKmh = pos.speed * 1.852;
+                    const speedKmh = pos.speed * 1.852; // Milhas Náuticas para km/h
                     updateSpeedUI(speedKmh);
 
                     if (pos.attributes && pos.attributes.batteryLevel) {
                         document.getElementById('sideBatery').textContent = pos.attributes.batteryLevel + '%';
+                    } else if (pos.attributes && pos.attributes.battery) {
+                         document.getElementById('sideBatery').textContent = pos.attributes.battery + '%';
                     }
                 }
+                
+                // 3. Atualizar o histórico na tela
+                loadHistory();
 
-                if (data.devices && data.devices.length > 0) {
-                    const dev = data.devices[0];
-                    deviceId = dev.id;
-                    document.getElementById('idDevice').textContent = dev.id;
-                }
-            };
-
-            ws.onerror = () => {
-                document.getElementById('navLabel').textContent = 'Erro na conexão';
-                document.getElementById('sideSignal').textContent = 'Erro';
-            };
-
-            ws.onclose = () => {
-                document.getElementById('navLabel').textContent = 'Desconectado';
-                setTimeout(startWebSocket, 5000); 
-            };
+            } catch (error) {
+                console.error("Erro no sincronismo:", error);
+            }
         }
 
         async function getAddressName(lat, lng) {
@@ -515,6 +516,7 @@
                 const histList = document.getElementById('historyList');
                 histList.innerHTML = '';
 
+                // Pegar os 3 últimos pontos
                 const top3 = positions.slice(-3).reverse();
 
                 for (let i = 0; i < top3.length; i++) {
@@ -563,7 +565,12 @@
         }
 
         handleResize();
-        startWebSocket();
+        
+        // Dispara a leitura assim que o site abre
+        fetchSystemData();
+
+        // Faz o site ir na Amazon buscar novos dados a cada 5 segundos de forma silenciosa!
+        setInterval(fetchSystemData, 5000); 
     </script>
 </body>
 </html>
