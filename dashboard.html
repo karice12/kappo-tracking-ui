@@ -12,284 +12,166 @@
 
         :root {
             --orange: #FF8C00;
-            --orange-dim: rgba(255,140,0,0.12);
             --orange-glow: rgba(255,140,0,0.3);
             --red: #FF3B3B;
-            --red-glow: rgba(255, 59, 59, 0.4);
-            --green: #00E07A;
             --bg: #0C0C0E;
             --surface: #111114;
             --surface2: #18181D;
             --border: rgba(255,255,255,0.06);
             --text: #FFFFFF;
             --muted: #5A5A6E;
-            --sidebar-w: 280px;
+            --sidebar-w: 300px;
         }
 
-        body { 
-            font-family: 'DM Sans', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s; }
+        
+        /* ESTADO BLOQUEADO */
+        body.is-locked { background: #2a0a0a; }
+        body.is-locked::after { content: ""; position: fixed; inset: 0; background: rgba(255, 0, 0, 0.15); pointer-events: none; z-index: 9999; border: 4px solid var(--red); }
 
-        /* TOPBAR */
-        .topnav {
-            height: 60px; background: var(--surface); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 16px; z-index: 300;
-        }
+        .topnav { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; z-index: 300; }
         .brand { display: flex; align-items: center; gap: 10px; }
-        .brand-icon {
-            width: 36px; height: 36px; background: var(--orange); border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px var(--orange-glow);
+        .brand-icon { width: 32px; height: 32px; background: var(--orange); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+        .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+
+        .menu-toggle { background: var(--surface2); border: 1px solid var(--border); color: white; padding: 8px; border-radius: 8px; cursor: pointer; margin-right: 15px; }
+
+        .layout { flex: 1; display: flex; overflow: hidden; }
+
+        .sidebar { 
+            width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; transition: transform 0.3s ease; overflow-y: auto; z-index: 250;
         }
-        .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
-
-        .menu-toggle {
-            background: var(--surface2); border: 1px solid var(--border); color: white;
-            padding: 8px; border-radius: 8px; cursor: pointer; margin-right: 15px; display: flex;
-        }
-
-        /* LAYOUT & SIDEBAR */
-        .layout { flex: 1; display: flex; overflow: hidden; position: relative; }
-
-        .sidebar {
-            width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto; height: 100%; z-index: 250;
-        }
-
-        /* Estilo da barra de rolagem da Sidebar */
+        .sidebar.collapsed { transform: translateX(-100%); width: 0; }
         .sidebar::-webkit-scrollbar { width: 4px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 10px; }
 
-        .sidebar.collapsed { margin-left: calc(-1 * var(--sidebar-w)); }
+        /* CARD DO VEÍCULO */
+        .vehicle-card { padding: 15px; border-bottom: 1px solid var(--border); }
+        .vehicle-img-container { width: 100%; height: 140px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); position: relative; }
+        .vehicle-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .status-badge { position: absolute; top: 10px; right: 10px; background: #00E07A; color: black; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
 
         .sb-section { padding: 20px; border-bottom: 1px solid var(--border); }
-        .sb-title { 
-            font-size: 10px; color: var(--muted); text-transform: uppercase; 
-            letter-spacing: 1.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
-        }
-        .sb-title svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+        .sb-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
-        /* ALERTAS SMART TOGGLES */
-        .alert-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .alert-label { font-size: 13px; color: #ddd; }
-        
-        .switch { position: relative; width: 38px; height: 20px; }
+        /* ALERTAS */
+        .alert-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .switch { position: relative; width: 36px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; inset: 0; background: #2a2a30;
-            transition: .3s; border-radius: 20px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
-            background: white; transition: .3s; border-radius: 50%;
-        }
-        input:checked + .slider { background: var(--orange); box-shadow: 0 0 10px var(--orange-glow); }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #2a2a30; transition: .3s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background: var(--orange); }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        /* MAPA */
+        /* HISTÓRICO */
+        .hist-item { padding: 12px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--orange); }
+        .hist-time { font-size: 11px; color: var(--orange); font-weight: 600; }
+        .hist-addr { font-size: 12px; color: #ccc; margin-top: 4px; }
+
         .map-container { flex: 1; position: relative; }
         #map { height: 100%; width: 100%; }
 
-        /* ANIMAÇÃO PULSANTE DE ALERTA */
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(255, 59, 59, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
-        }
-        .marker-alert {
-            width: 18px; height: 18px; background: var(--red); border: 3px solid #fff;
-            border-radius: 50%; animation: pulse-red 1.5s infinite;
-        }
-        .marker-normal {
-            width: 16px; height: 16px; background: var(--orange); border: 2px solid #fff;
-            border-radius: 50%; box-shadow: 0 0 15px var(--orange-glow);
-        }
+        /* WIDGETS */
+        .speed-widget { position: absolute; top: 20px; right: 20px; z-index: 100; background: rgba(17,17,20,0.9); border: 1px solid var(--border); padding: 12px; border-radius: 12px; text-align: center; }
+        .speed-val { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; color: var(--orange); }
 
-        /* INFO FLOATING WIDGET */
-        .speed-widget {
-            position: absolute; top: 20px; right: 20px; z-index: 100;
-            background: rgba(17,17,20,0.85); backdrop-filter: blur(10px);
-            border: 1px solid var(--border); padding: 15px; border-radius: 12px;
-            text-align: center; min-width: 100px;
-        }
-        .speed-val { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; color: var(--orange); }
+        .btn-cmd { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: 'Rajdhani', sans-serif; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 8px; transition: 0.2s; }
+        .btn-lock { background: rgba(255, 59, 59, 0.1); color: var(--red); border-color: var(--red); }
+        .btn-unlock { background: rgba(0, 224, 122, 0.1); color: #00E07A; border-color: #00E07A; }
 
-        .btn-cmd {
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
-            font-family: 'Rajdhani', sans-serif; font-weight: 600; cursor: pointer;
-            text-transform: uppercase; margin-top: 8px; transition: 0.2s;
-        }
-        .btn-lock { background: rgba(255, 59, 59, 0.1); color: var(--red); border-color: rgba(255, 59, 59, 0.2); }
-        .btn-unlock { background: rgba(0, 224, 122, 0.1); color: var(--green); border-color: rgba(0, 224, 122, 0.2); }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 59, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); } }
+        .marker-alert { width: 16px; height: 16px; background: var(--red); border: 2px solid #fff; border-radius: 50%; animation: pulse-red 1s infinite; }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
     <nav class="topnav">
-        <button class="menu-toggle" onclick="toggleSidebar()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <div class="brand">
-            <div class="brand-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            </div>
+            <div class="brand-icon">⚡</div>
             <span class="brand-name">KAPPO TRACKING</span>
         </div>
     </nav>
 
     <div class="layout">
         <aside class="sidebar" id="sidebar">
-            <div class="sb-section">
-                <div class="sb-title">
-                    <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                    Veículo Selecionado
+            <div class="vehicle-card">
+                <div class="vehicle-img-container">
+                    <span class="status-badge">ONLINE</span>
+                    <img src="https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=500" alt="Veículo">
                 </div>
-                <div id="deviceName" style="font-weight: 500; font-size: 15px;">Carregando...</div>
-                <div id="deviceImei" style="font-size: 11px; color: var(--muted);">ID: #---</div>
-            </div>
-
-            <div class="sb-section">
-                <div class="sb-title">
-                    <svg viewBox="0 0 24 24" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    Alertas Inteligentes
-                </div>
-                
-                <div class="alert-item">
-                    <span class="alert-label">Cerca Eletrônica</span>
-                    <label class="switch"><input type="checkbox" id="alertGeofence"><span class="slider"></span></label>
-                </div>
-                <div class="alert-item">
-                    <span class="alert-label">Alerta de Ignição</span>
-                    <label class="switch"><input type="checkbox" id="alertIgnition" checked><span class="slider"></span></label>
-                </div>
-                <div class="alert-item">
-                    <span class="alert-label">Vibração / Choque</span>
-                    <label class="switch"><input type="checkbox" id="alertVibration"><span class="slider"></span></label>
-                </div>
-                <div class="alert-item">
-                    <span class="alert-label">Power Cut (Fios)</span>
-                    <label class="switch"><input type="checkbox" id="alertPower"><span class="slider"></span></label>
+                <div style="margin-top: 10px;">
+                    <h3 id="deviceName" style="font-size: 16px;">Meu Veículo</h3>
+                    <p id="deviceImei" style="font-size: 11px; color: var(--muted);">IMEI: ---</p>
                 </div>
             </div>
 
             <div class="sb-section">
-                <div class="sb-title">Segurança</div>
-                <button class="btn-cmd btn-lock" onclick="handleCommand('engineStop')">Bloquear Motor</button>
-                <button class="btn-cmd btn-unlock" onclick="handleCommand('engineResume')">Liberar Motor</button>
+                <div class="sb-title">Alertas Inteligentes</div>
+                <div class="alert-item"><span>Cerca Geofence</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+                <div class="alert-item"><span>Alerta Ignição</span><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+                <div class="alert-item"><span>Vibração/Choque</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
             </div>
 
             <div class="sb-section">
-                <div class="sb-title">Telemetria</div>
-                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;">
-                    <span style="color: var(--muted);">Bateria:</span>
-                    <span id="statBattery">--%</span>
+                <div class="sb-title">Histórico de Hoje</div>
+                <div id="historyList">
+                    <div class="hist-item">
+                        <div class="hist-time">12:10 - Estacionado</div>
+                        <div class="hist-addr">Av. Iperoig, Centro, Ubatuba</div>
+                    </div>
+                    <div class="hist-item">
+                        <div class="hist-time">11:45 - Em Trânsito</div>
+                        <div class="hist-addr">Rua Guarani, Itaguá</div>
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                    <span style="color: var(--muted);">Sinal:</span>
-                    <span id="statSignal" style="color: var(--green);">Excelente</span>
-                </div>
+            </div>
+
+            <div class="sb-section">
+                <button class="btn-cmd btn-lock" onclick="toggleLock(true)">Bloquear Motor</button>
+                <button class="btn-cmd btn-unlock" onclick="toggleLock(false)">Liberar Motor</button>
             </div>
         </aside>
 
         <main class="map-container">
             <div class="speed-widget">
-                <div style="font-size: 9px; color: var(--muted); text-transform: uppercase;">Velocidade</div>
+                <div style="font-size: 9px; color: var(--muted);">VELOCIDADE</div>
                 <div class="speed-val" id="mapSpeed">0</div>
-                <div style="font-size: 10px; color: var(--muted);">km/h</div>
+                <div style="font-size: 10px;">KM/H</div>
             </div>
-
             <div id="map"></div>
         </main>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const TRACCAR_URL = 'https://api.kappotracking.com.br';
-        let deviceId = null;
-        let vehicleMarker = null;
-        const user = JSON.parse(localStorage.getItem('kappo_user'));
-
-        if (!user) window.location.href = 'index.html';
-
-        // Inicializa Mapa
         const map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        let marker = L.marker([-23.4332, -45.0711], {
+            icon: L.divIcon({ className: '', html: '<div style="width:16px; height:16px; background:#FF8C00; border:2px solid white; border-radius:50%;"></div>' })
+        }).addTo(map);
 
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            setTimeout(() => map.invalidateSize(), 400);
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('collapsed');
+            setTimeout(() => map.invalidateSize(), 300);
         }
 
-        async function updateDashboard() {
-            try {
-                const auth = btoa(`${user.email}:kappo123`);
-                const headers = { 'Authorization': `Basic ${auth}` };
-
-                // Busca Dispositivos
-                const devRes = await fetch(`${TRACCAR_URL}/api/devices`, { headers });
-                const devices = await devRes.json();
-                if (devices.length > 0) {
-                    const dev = devices[0];
-                    deviceId = dev.id;
-                    document.getElementById('deviceName').innerText = dev.name;
-                    document.getElementById('deviceImei').innerText = `ID: #${dev.id}`;
+        // FUNÇÃO DE BLOQUEIO (TELA VERMELHA)
+        function toggleLock(locked) {
+            const body = document.getElementById('mainBody');
+            if(locked) {
+                if(confirm("Deseja BLOQUEAR o veículo agora?")) {
+                    body.classList.add('is-locked');
+                    // Aqui você chamaria sua API do Traccar: engineStop
                 }
-
-                // Busca Posição
-                const posRes = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
-                const positions = await posRes.json();
-                
-                if (positions.length > 0) {
-                    const lastPos = positions[positions.length - 1];
-                    const speed = Math.round(lastPos.speed * 1.852);
-                    const latlng = [lastPos.latitude, lastPos.longitude];
-
-                    document.getElementById('mapSpeed').innerText = speed;
-                    document.getElementById('statBattery').innerText = (lastPos.attributes.batteryLevel || lastPos.attributes.battery || '--') + '%';
-
-                    // Lógica de Alerta Visual (Simulada pelo atributo 'alarm' do Traccar)
-                    const isAlert = lastPos.attributes.alarm ? true : false;
-                    
-                    if (vehicleMarker) map.removeLayer(vehicleMarker);
-                    
-                    const iconClass = isAlert ? 'marker-alert' : 'marker-normal';
-                    vehicleMarker = L.marker(latlng, {
-                        icon: L.divIcon({ className: '', html: `<div class="${iconClass}"></div>`, iconAnchor: [9, 9] })
-                    }).addTo(map);
-
-                    map.panTo(latlng);
-                }
-            } catch (err) {
-                console.error("Erro Kappo Sync:", err);
+            } else {
+                body.classList.remove('is-locked');
+                // Aqui você chamaria sua API do Traccar: engineResume
             }
         }
-
-        async function handleCommand(type) {
-            if (!deviceId) return;
-            const confirmMsg = type === 'engineStop' ? "BLOQUEAR veículo agora?" : "LIBERAR motor do veículo?";
-            if (!confirm(confirmMsg)) return;
-
-            try {
-                const auth = btoa(`${user.email}:kappo123`);
-                const response = await fetch(`${TRACCAR_URL}/api/commands/send`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId, type })
-                });
-                if (response.ok) alert("Comando enviado com sucesso!");
-            } catch (err) {
-                alert("Erro ao enviar comando.");
-            }
-        }
-
-        setInterval(updateDashboard, 5000);
-        updateDashboard();
     </script>
 </body>
 </html>
