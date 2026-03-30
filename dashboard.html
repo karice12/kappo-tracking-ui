@@ -19,60 +19,69 @@
             --border: rgba(255,255,255,0.06);
             --text: #FFFFFF;
             --muted: #5A5A6E;
-            --sidebar-w: 300px;
+            --sidebar-w: 320px;
         }
 
         body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         /* Topnav */
         .topnav { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
-        .brand { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 2px; }
+        .brand { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 2px; font-size: 18px; }
 
         .layout { flex: 1; display: flex; position: relative; overflow: hidden; }
 
-        /* Sidebar com Scroll */
+        /* Sidebar */
         .sidebar { 
             width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
             display: flex; flex-direction: column; overflow-y: auto; z-index: 900;
             transition: transform 0.3s ease;
         }
-        .sidebar.closed { transform: translateX(-100%); position: absolute; }
 
         /* Seções da Sidebar */
-        .section-title { padding: 15px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+        .section-title { padding: 15px 20px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border); background: var(--surface2); font-weight: 600; }
         
         /* Filtro de Histórico */
-        .history-filter { padding: 15px; border-bottom: 1px solid var(--border); }
-        .input-group { margin-bottom: 10px; }
-        .input-group label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
-        .input-group input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; }
+        .history-filter { padding: 20px; border-bottom: 1px solid var(--border); }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .input-group input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 6px; font-size: 13px; outline: none; transition: border-color 0.2s; color-scheme: dark; }
+        .input-group input:focus { border-color: rgba(255,140,0,0.5); }
         
-        .btn-search { 
-            width: 100%; background: var(--orange); color: #000; border: none; padding: 10px; 
-            border-radius: 6px; font-weight: 700; font-family: 'Rajdhani'; cursor: pointer;
-            transition: opacity 0.2s;
+        .button-group { display: flex; gap: 10px; margin-top: 5px; }
+        
+        .btn {
+            flex: 1; padding: 12px; border-radius: 6px; font-weight: 700; font-family: 'Rajdhani', sans-serif; 
+            font-size: 14px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; border: none;
         }
-        .btn-search:hover { opacity: 0.9; }
+        
+        .btn-search { background: var(--orange); color: #000; }
+        .btn-search:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(255,140,0,0.3); }
+        
+        .btn-clear { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+        .btn-clear:hover { background: var(--surface2); color: #fff; border-color: rgba(255,255,255,0.2); }
 
         /* Lista de Pontos do Histórico */
-        #historyItems { flex: 1; }
+        #historyItems { flex: 1; overflow-y: auto; }
         .history-item { 
-            padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;
+            padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .history-item:hover { background: var(--orange-dim); }
-        .history-item-time { font-weight: 700; font-size: 12px; color: var(--orange); margin-bottom: 2px; }
-        .history-item-addr { font-size: 11px; color: var(--muted); }
-
+        .history-item:hover { background: var(--surface2); padding-left: 25px; border-left: 2px solid var(--orange); }
+        .history-item-info { display: flex; flex-direction: column; gap: 4px; }
+        .history-item-time { font-weight: 600; font-size: 13px; color: #fff; }
+        .history-item-speed { font-size: 11px; color: var(--orange); font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; }
+        
         /* Mapa */
         .map-container { flex: 1; position: relative; }
-        #map { height: 100%; width: 100%; }
+        #map { height: 100%; width: 100%; background: var(--bg); }
 
-        /* Estilo da Linha do Histórico */
-        .history-line { filter: drop-shadow(0 0 5px var(--orange)); }
+        /* Efeito Neon na Linha do Histórico */
+        .neon-route-glow { filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.8)) drop-shadow(0 0 12px rgba(255, 140, 0, 0.4)); }
 
         @media (max-width: 768px) {
-            .sidebar { width: 100%; position: absolute; height: 50%; bottom: 0; transform: translateY(0); border-right: none; border-top: 1px solid var(--border); }
-            .sidebar.closed { transform: translateY(100%); }
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; height: 45vh; order: 2; border-right: none; border-top: 1px solid var(--border); }
+            .map-container { height: 55vh; order: 1; }
         }
     </style>
 </head>
@@ -81,7 +90,10 @@
     <nav class="topnav">
         <div class="brand">Kappo Tracking</div>
         <div style="flex:1"></div>
-        <div id="connectionStatus" style="font-size: 10px; color: var(--muted);">● SISTEMA ONLINE</div>
+        <div id="connectionStatus" style="font-size: 10px; color: #00E07A; letter-spacing: 1px; text-transform: uppercase; font-weight: 600;">
+            <span style="display:inline-block; width:6px; height:6px; background:#00E07A; border-radius:50%; margin-right:6px; box-shadow: 0 0 8px #00E07A;"></span>
+            SISTEMA ONLINE
+        </div>
     </nav>
 
     <div class="layout">
@@ -89,20 +101,23 @@
             <div class="section-title">Filtro de Percurso</div>
             <div class="history-filter">
                 <div class="input-group">
-                    <label>Início</label>
+                    <label>Início do Trajeto</label>
                     <input type="datetime-local" id="dateFrom">
                 </div>
                 <div class="input-group">
-                    <label>Fim</label>
+                    <label>Fim do Trajeto</label>
                     <input type="datetime-local" id="dateTo">
                 </div>
-                <button class="btn-search" onclick="loadHistory()">Visualizar Rota</button>
+                <div class="button-group">
+                    <button class="btn btn-search" id="btnVisualizar" onclick="loadHistory()">Visualizar Rota</button>
+                    <button class="btn btn-clear" onclick="clearMap()">Limpar</button>
+                </div>
             </div>
 
-            <div class="section-title">Pontos da Rota</div>
+            <div class="section-title">Pontos de Registro</div>
             <div id="historyItems">
-                <div style="padding: 20px; text-align: center; color: var(--muted); font-size: 12px;">
-                    Selecione um período para ver o trajeto.
+                <div id="emptyState" style="padding: 30px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6;">
+                    Selecione um período acima para visualizar o histórico de posições e velocidades.
                 </div>
             </div>
         </aside>
@@ -117,20 +132,32 @@
         const TRACCAR_URL = 'https://api.kappotracking.com.br';
         let map, marker, routeLine;
         let deviceId = null;
+        let liveTrackingInterval;
 
-        // Recuperar dados do usuário (Karice, certifique-se que o login salva isso)
+        // Recuperar autenticação
         const user = JSON.parse(localStorage.getItem('kappo_user'));
-        const auth = 'Basic ' + btoa(user.email + ':kappo123');
+        if (!user) window.location.href = 'index.html'; // Proteção básica
+        const auth = 'Basic ' + btoa(user.email + ':kappo123'); // Atenção: Em produção, o ideal é usar o token da sessão
 
-        // Inicializar Mapa
-        map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        // Inicializar Mapa - Dark Mode CartoDB
+        map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; Kappo Tracking',
+            maxZoom: 19
+        }).addTo(map);
 
-        // Definir ícone Amber (Kappo)
+        // Ícone do Veículo em Tempo Real
         const kappoIcon = L.divIcon({
             className: 'custom-div-icon',
-            html: `<div style="background-color: var(--orange); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px var(--orange);"></div>`,
-            iconSize: [12, 12], iconAnchor: [6, 6]
+            html: `<div style="background-color: var(--orange); width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 15px var(--orange), 0 0 5px #fff;"></div>`,
+            iconSize: [14, 14], iconAnchor: [7, 7]
+        });
+
+        // Ícone para os pontos do histórico
+        const historyPointIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background-color: transparent; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--orange);"></div>`,
+            iconSize: [8, 8], iconAnchor: [4, 4]
         });
 
         async function init() {
@@ -141,96 +168,177 @@
                     deviceId = devices[0].id;
                     fetchLiveLocation();
                 }
-            } catch (e) { console.error("Erro na conexão"); }
+            } catch (e) { 
+                console.error("Erro na conexão com Traccar", e); 
+            }
         }
 
         // Localização em Tempo Real
         async function fetchLiveLocation() {
-            const res = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers: { 'Authorization': auth } });
-            const data = await res.json();
-            if (data.length > 0) {
-                const pos = data[0];
-                const latlng = [pos.latitude, pos.longitude];
-                if (!marker) {
-                    marker = L.marker(latlng, { icon: kappoIcon }).addTo(map);
-                } else {
-                    marker.setLatLng(latlng);
+            try {
+                const res = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers: { 'Authorization': auth } });
+                const data = await res.json();
+                
+                if (data.length > 0) {
+                    const pos = data[0];
+                    const latlng = [pos.latitude, pos.longitude];
+                    
+                    if (!marker) {
+                        marker = L.marker(latlng, { icon: kappoIcon, zIndexOffset: 1000 }).addTo(map);
+                        if (!routeLine) map.setView(latlng, 16);
+                    } else {
+                        marker.setLatLng(latlng);
+                    }
                 }
-                if (!routeLine) map.panTo(latlng);
-            }
-            setTimeout(fetchLiveLocation, 5000);
+            } catch(e) { console.log(e); }
+            
+            liveTrackingInterval = setTimeout(fetchLiveLocation, 5000);
         }
 
-        // --- FUNÇÃO DE HISTÓRICO ---
+        // --- FUNCIONALIDADE DE HISTÓRICO ---
         async function loadHistory() {
-            const from = new Date(document.getElementById('dateFrom').value).toISOString();
-            const to = new Date(document.getElementById('dateTo').value).toISOString();
+            const dateFromInput = document.getElementById('dateFrom').value;
+            const dateToInput = document.getElementById('dateTo').value;
             
-            const btn = document.querySelector('.btn-search');
+            if (!dateFromInput || !dateToInput) {
+                alert("Por favor, selecione as datas de início e fim.");
+                return;
+            }
+
+            const from = new Date(dateFromInput).toISOString();
+            const to = new Date(dateToInput).toISOString();
+            const btn = document.getElementById('btnVisualizar');
+            
             btn.textContent = "Buscando...";
+            btn.style.opacity = "0.7";
 
             try {
                 const url = `${TRACCAR_URL}/api/positions?deviceId=${deviceId}&from=${from}&to=${to}`;
-                const res = await fetch(url, { headers: { 'Authorization': auth } });
+                const res = await fetch(url, { headers: { 'Authorization': auth }, headers: { 'Accept': 'application/json' } });
+                
+                if (!res.ok) throw new Error('Falha ao buscar dados');
+                
                 const positions = await res.json();
 
                 if (positions.length === 0) {
-                    alert("Nenhuma rota encontrada neste período.");
+                    alert("Nenhuma rota registrada neste período.");
+                    btn.textContent = "Visualizar Rota";
+                    btn.style.opacity = "1";
                     return;
                 }
 
-                // Limpar rota anterior se existir
-                if (routeLine) map.removeLayer(routeLine);
+                // Limpar dados anteriores do mapa
+                clearMapLayers();
 
+                // Extrair coordenadas
                 const pathCoords = positions.map(p => [p.latitude, p.longitude]);
                 
-                // Desenhar a linha no mapa (Cor Laranja Kappo)
+                // Desenhar Polyline com Efeito Neon
                 routeLine = L.polyline(pathCoords, {
                     color: '#FF8C00',
-                    weight: 4,
-                    opacity: 0.8,
-                    className: 'history-line'
+                    weight: 3,
+                    opacity: 1,
+                    className: 'neon-route-glow',
+                    lineCap: 'round',
+                    lineJoin: 'round'
                 }).addTo(map);
 
-                // Ajustar o zoom para ver a rota toda
-                map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                // Ajuste Automático de Zoom (FitBounds)
+                map.fitBounds(routeLine.getBounds(), { padding: [60, 60], maxZoom: 18 });
 
-                // Renderizar lista na Sidebar
+                // Renderizar a lista na interface
                 renderHistoryList(positions);
 
             } catch (e) {
-                alert("Erro ao buscar histórico.");
+                console.error(e);
+                alert("Erro ao buscar o histórico de rotas. Verifique a conexão.");
             } finally {
                 btn.textContent = "Visualizar Rota";
+                btn.style.opacity = "1";
             }
         }
 
+        // Renderizar a lista de pontos na Sidebar
         function renderHistoryList(positions) {
             const container = document.getElementById('historyItems');
             container.innerHTML = '';
 
-            // Mostrar apenas as 20 últimas posições para não travar a UI
-            positions.slice(-20).reverse().forEach(p => {
-                const time = new Date(p.deviceTime).toLocaleString('pt-BR');
+            // Inverter para mostrar os mais recentes primeiro. 
+            // Filtrar para não travar a UI (ex: pular posições paradas ou mostrar a cada X registros)
+            // Aqui pegamos uma amostra de até 50 pontos para manter o painel rápido
+            const step = Math.max(1, Math.floor(positions.length / 50));
+            const filteredPositions = positions.filter((_, index) => index % step === 0).reverse();
+
+            filteredPositions.forEach(p => {
+                const dateObj = new Date(p.deviceTime);
+                const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+                const dateStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                const speedKmh = Math.round(p.speed * 1.852); // Nó para km/h
+
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
-                    <div class="history-item-time">${time}</div>
-                    <div class="history-item-addr">Velocidade: ${Math.round(p.speed * 1.852)} km/h</div>
+                    <div class="history-item-info">
+                        <span class="history-item-time">${dateStr} às ${timeStr}</span>
+                    </div>
+                    <span class="history-item-speed">${speedKmh} km/h</span>
                 `;
-                div.onclick = () => map.setView([p.latitude, p.longitude], 17);
+                
+                // Focar no ponto ao clicar
+                div.onclick = () => {
+                    map.setView([p.latitude, p.longitude], 18);
+                    // Opcional: Adicionar um popup temporário ou marcador visual rápido
+                    L.circleMarker([p.latitude, p.longitude], {
+                        radius: 8, fillColor: "#FF8C00", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
+                    }).addTo(map);
+                };
+                
                 container.appendChild(div);
             });
         }
 
-        // Setar datas padrão (Hoje)
-        const now = new Date();
-        const today = now.toISOString().slice(0, 16);
-        now.setHours(0,0,0,0);
-        const start = now.toISOString().slice(0, 16);
-        document.getElementById('dateFrom').value = start;
-        document.getElementById('dateTo').value = today;
+        // Função auxiliar para remover apenas a linha, não o marcador do carro
+        function clearMapLayers() {
+            if (routeLine) {
+                map.removeLayer(routeLine);
+                routeLine = null;
+            }
+            // Limpar círculos de clique se houver
+            map.eachLayer((layer) => {
+                if (layer instanceof L.CircleMarker) {
+                    map.removeLayer(layer);
+                }
+            });
+        }
 
+        // Botão Limpar Mapa
+        function clearMap() {
+            clearMapLayers();
+            document.getElementById('historyItems').innerHTML = `
+                <div id="emptyState" style="padding: 30px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6;">
+                    Histórico limpo. Selecione um período acima para visualizar novamente.
+                </div>`;
+            
+            // Voltar o foco para o marcador em tempo real
+            if (marker) {
+                map.setView(marker.getLatLng(), 16);
+            }
+        }
+
+        // Configurar as datas padrão (Início do dia de hoje até agora)
+        function setDefaultDates() {
+            const now = new Date();
+            // Ajuste de fuso horário local para o input datetime-local
+            const tzOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 16);
+            document.getElementById('dateTo').value = localISOTime;
+
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const localStartISOTime = (new Date(startOfDay.getTime() - tzOffset)).toISOString().slice(0, 16);
+            document.getElementById('dateFrom').value = localStartISOTime;
+        }
+
+        setDefaultDates();
         init();
     </script>
 </body>
