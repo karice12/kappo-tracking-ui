@@ -18,6 +18,7 @@
             --red-dim: rgba(255,59,59,0.12);
             --green: #00E07A;
             --green-dim: rgba(0,224,122,0.12);
+            --cyan-glow: #00E5FF;
             --bg: #0C0C0E;
             --surface: #111114;
             --surface2: #18181D;
@@ -38,6 +39,24 @@
             background: var(--surface); border-bottom: 1px solid var(--border);
             display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 200;
         }
+        
+        /* NOVO DESIGN DO BOTÃO MENU (Efeito Aberração Cromática) */
+        .menu-btn { 
+            display: flex; align-items: center; justify-content: center; 
+            width: 36px; height: 36px; background: var(--surface2); 
+            border: 1px solid var(--border); border-radius: 10px; 
+            cursor: pointer; flex-shrink: 0; transition: all 0.2s; 
+        }
+        .menu-btn:hover { border-color: var(--border2); background: #202026; }
+        .burger-icon { 
+            width: 16px; height: 12px; display: flex; flex-direction: column; justify-content: space-between; 
+        }
+        .burger-line { 
+            height: 2px; width: 100%; background: #fff; border-radius: 2px; 
+            box-shadow: -1px 0 3px var(--cyan-glow), 1px 0 3px var(--orange); 
+            transition: all 0.3s ease;
+        }
+        
         .topnav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .brand-icon {
             width: 34px; height: 34px; background: var(--orange); border-radius: 8px;
@@ -58,27 +77,31 @@
         .status-label { font-size: 11px; color: var(--muted2); white-space: nowrap; }
         .status-label.locked { color: var(--red); font-weight: bold; }
 
-        .nav-btn {
+        .nav-btn-action {
             width: 34px; height: 34px; background: var(--surface2); border: 1px solid var(--border);
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; color: var(--muted2); transition: all 0.2s; flex-shrink: 0;
         }
-        .nav-btn:hover { border-color: var(--border2); color: var(--text); }
-        .nav-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-        .menu-btn { display: flex; }
-        @media(min-width:900px){ .menu-btn { display: none; } }
+        .nav-btn-action:hover { border-color: var(--border2); color: var(--text); }
+        .nav-btn-action svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
         .layout { flex: 1; display: flex; overflow: hidden; position: relative; }
 
-        /* Ajuste para permitir rolagem total da barra lateral */
+        /* Lógica da Sidebar unificada (Mobile e Desktop) */
         .sidebar {
             width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 150; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+            display: flex; flex-direction: column; z-index: 150; 
+            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), margin-left 0.35s cubic-bezier(0.4,0,0.2,1);
             position: absolute; top: 0; bottom: 0; left: 0; overflow-y: auto; overflow-x: hidden;
         }
-        @media(min-width:900px){ .sidebar { position: relative; transform: none !important; } }
+        /* Comportamento no Celular */
         .sidebar.closed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+        /* Comportamento no Computador */
+        @media(min-width:900px){ 
+            .sidebar { position: relative; transform: none !important; margin-left: 0; } 
+            .sidebar.closed { margin-left: calc(-1 * var(--sidebar-w)); transform: none !important; }
+        }
 
         .sidebar-overlay {
             display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 140;
@@ -137,7 +160,6 @@
         .btn-unlock { background: var(--green-dim); color: var(--green); border-color: rgba(0,224,122,0.2); }
         .btn-unlock:hover { background: rgba(0,224,122,0.2); }
 
-        /* NOVA SEÇÃO: Alertas Inteligentes */
         .alerts-panel { padding: 12px; border-bottom: 1px solid var(--border); }
         .alerts-title { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
         .alerts-title svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
@@ -159,7 +181,6 @@
         .stat-label { font-size: 10px; color: var(--muted2); }
         .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: var(--orange); }
 
-        /* Histórico ajustado para rolar junto com a sidebar */
         .history { padding: 12px; }
         .history-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
         .hist-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -172,7 +193,6 @@
         .map-area { flex: 1; position: relative; overflow: hidden; }
         #map { position: absolute; inset: 0; z-index: 1; }
 
-        /* Animação de pulso para os alertas no mapa */
         @keyframes alertMapPulse {
             0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.8); }
             70% { box-shadow: 0 0 0 25px rgba(255, 59, 59, 0); }
@@ -238,9 +258,14 @@
 <body id="mainBody">
 
     <nav class="topnav">
-        <button class="nav-btn menu-btn" onclick="toggleSidebar()" title="Menu">
-            <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        <button class="menu-btn" onclick="toggleSidebar()" title="Alternar Menu Lateral">
+            <div class="burger-icon">
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+            </div>
         </button>
+
         <div class="topnav-brand">
             <div class="brand-icon">
                 <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
@@ -255,10 +280,10 @@
             <div class="status-dot" id="navDot"></div>
             <span class="status-label" id="navLabel">Conectando...</span>
         </div>
-        <button class="nav-btn" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
+        <button class="nav-btn-action" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         </button>
-        <button class="nav-btn" title="Sair" onclick="logout()">
+        <button class="nav-btn-action" title="Sair" onclick="logout()">
             <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
     </nav>
@@ -344,6 +369,7 @@
                     </label>
                 </div>
             </div>
+
             <div class="stats-strip">
                 <div class="stat-item">
                     <span class="stat-label">Velocidade atual</span>
@@ -425,20 +451,26 @@
             };
         }
 
+        // Lógica do botão adaptada para Computador e Celular
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebarOverlay');
             sb.classList.toggle('closed');
-            ov.classList.toggle('visible');
+            
+            // Só exibe a película escura de fundo se for tela de celular
+            if (window.innerWidth < 900) {
+                ov.classList.toggle('visible');
+            }
+            
+            // Redesenha o mapa de forma fluida após o menu recolher/expandir
             setTimeout(() => map.invalidateSize(), 360);
         }
 
+        // Garante que a transição entre redimensionamentos não quebre o visual
         function handleResize() {
-            const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebarOverlay');
             if (window.innerWidth >= 900) {
-                sb.classList.remove('closed');
-                ov.classList.remove('visible');
+                ov.classList.remove('visible'); // Sempre esconde overlay no PC
             }
             map.invalidateSize();
         }
@@ -450,7 +482,6 @@
             maxZoom: 19
         }).addTo(map);
 
-        // Função do ícone modificada para suportar o estado de ALERTA vermelho
         function makeIcon(color, isAlert = false) {
             const animationStyle = isAlert ? 'animation: alertMapPulse 1.5s infinite;' : '';
             return L.divIcon({
@@ -507,26 +538,18 @@
             }
         }
 
-        /* --- LÓGICA DE ALERTAS INTELIGENTES --- */
-        
         function updateAlertConfig(type, isEnabled) {
-            // Essa função envia a configuração para o backend (salva a preferência)
             console.log(`Configuração atualizada: Alerta [${type}] definido como ${isEnabled}`);
-            // Aqui futuramente entra o fetch enviando a flag para sua API / Traccar Attributes
         }
 
         function triggerVisualAlert(alertMessage) {
-            // Aciona o marcador vermelho pulsante no mapa
             marker.setIcon(makeIcon('#FF3B3B', true));
-            
-            // Atualiza a barra do topo para vermelho com a mensagem
             const navDot = document.getElementById('navDot');
             const navLabel = document.getElementById('navLabel');
             navDot.className = 'status-dot locked'; 
             navLabel.textContent = `⚠️ ALERTA: ${alertMessage}`;
             navLabel.className = 'status-label locked';
 
-            // Dica UX: Volta ao normal após 10 segundos se não houver novos eventos
             setTimeout(() => {
                 marker.setIcon(makeIcon('#FF8C00', false));
                 navDot.className = 'status-dot';
@@ -536,33 +559,8 @@
         }
 
         function connectTraccarEvents() {
-            // Estrutura pronta para conectar via WebSocket e escutar eventos
             console.log("Serviço de escuta de Alertas iniciado.");
-            
-            /* Exemplo de implementação futura quando conectar o Socket do Traccar:
-            const socket = new WebSocket('wss://api.kappotracking.com.br/api/socket');
-            socket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.events) {
-                    data.events.forEach(e => {
-                        if (e.type === 'geofenceExit' && document.getElementById('toggle-geofence').checked) {
-                            triggerVisualAlert('Saída de Cerca Eletrônica!');
-                        }
-                        if (e.type === 'ignitionOn' && document.getElementById('toggle-acc').checked) {
-                            triggerVisualAlert('Ignição Ligada!');
-                        }
-                        if (e.type === 'alarm' && e.attributes.alarm === 'vibration' && document.getElementById('toggle-vib').checked) {
-                            triggerVisualAlert('Vibração / Movimento Detectado!');
-                        }
-                        if (e.type === 'alarm' && e.attributes.alarm === 'powerCut' && document.getElementById('toggle-cut').checked) {
-                            triggerVisualAlert('Corte de Energia Detectado!');
-                        }
-                    });
-                }
-            };
-            */
         }
-        /* -------------------------------------- */
 
         async function fetchSystemData() {
             try {
@@ -612,7 +610,6 @@
                     }
                 }
                 
-                // Se não houver alerta piscando, mantém o texto padrão
                 if(!document.getElementById('navDot').classList.contains('locked')) {
                     document.getElementById('navLabel').textContent = 'Monitoramento ativo';
                 }
@@ -633,9 +630,9 @@
                 if (data && data.address) {
                     return data.address.road || data.address.suburb || data.address.city || "Ubatuba, SP";
                 }
-                return `Ponto em Ubatuba`;
+                return `Ponto não identificado`;
             } catch {
-                return `Rua em Ubatuba`;
+                return `Rua não identificada`;
             }
         }
 
@@ -654,7 +651,6 @@
 
                 histList.innerHTML = '';
 
-                // Filtrar os 4 últimos pontos registrados
                 const topPonto = positions.slice(-4).reverse();
 
                 for (let i = 0; i < topPonto.length; i++) {
