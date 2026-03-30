@@ -179,7 +179,8 @@
 
         .history { padding: 12px; }
         .history-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .hist-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .hist-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); transition: background 0.2s; border-radius: 4px; }
+        .hist-item:hover { background: var(--surface2); }
         .hist-item:last-child { border-bottom: none; }
         .hist-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--surface3); border: 2px solid var(--muted); flex-shrink: 0; }
         .hist-dot.recent { border-color: var(--orange); background: var(--orange-dim); }
@@ -491,7 +492,9 @@
         }
 
         var marker = L.marker([-23.4332, -45.0711], { icon: makeIcon('#FF8C00') }).addTo(map);
-        var polyline = L.polyline([], { color: '#FF8C00', opacity: 0.4, weight: 2, dashArray: '6,8' }).addTo(map);
+        
+        // Ajustado de linha tracejada para linha sólida para destacar melhor o trajeto
+        var polyline = L.polyline([], { color: '#FF8C00', opacity: 0.7, weight: 4 }).addTo(map);
         var trail = [];
 
         function updateSpeedUI(kmh) {
@@ -555,17 +558,14 @@
         }
 
         function triggerVisualAlert(alertMessage) {
-            // Faz o ponto do mapa pulsar em vermelho
             marker.setIcon(makeIcon('#FF3B3B', true));
             
-            // Atualiza a barra do topo com a mensagem
             const navDot = document.getElementById('navDot');
             const navLabel = document.getElementById('navLabel');
             navDot.className = 'status-dot locked'; 
             navLabel.textContent = `⚠️ ${alertMessage}`;
             navLabel.className = 'status-label locked';
 
-            // Retorna ao normal após 10 segundos
             setTimeout(() => {
                 if(!document.getElementById('mainBody').classList.contains('locked')) {
                     marker.setIcon(makeIcon('#FF8C00', false));
@@ -590,10 +590,7 @@
                 
                 if (data.events) {
                     data.events.forEach(e => {
-                        // Verifica se o evento pertence ao aparelho selecionado
                         if (e.deviceId === deviceId) {
-                            
-                            // Lógica para disparar os alertas visuais se o botão estiver ativado
                             if (e.type === 'ignitionOn' && document.getElementById('toggle-acc').checked) {
                                 triggerVisualAlert('Motor Ligado (ACC)!');
                             }
@@ -650,11 +647,6 @@
                     
                     const latlng = [pos.latitude, pos.longitude];
                     marker.setLatLng(latlng);
-                    map.panTo(latlng);
-
-                    trail.push(latlng);
-                    if (trail.length > 20) trail.shift();
-                    polyline.setLatLngs(trail);
 
                     const speedKmh = pos.speed * 1.852; 
                     updateSpeedUI(speedKmh);
@@ -692,6 +684,22 @@
             }
         }
 
+        // Função para focar em um ponto do histórico quando clicado
+        function focusHistoryPoint(lat, lng, speedKnots) {
+            map.setView([lat, lng], 17);
+            
+            document.getElementById('coordLat').textContent = lat.toFixed(4);
+            document.getElementById('coordLng').textContent = lng.toFixed(4);
+            
+            const speedKmh = speedKnots * 1.852;
+            updateSpeedUI(speedKmh);
+            
+            L.popup()
+                .setLatLng([lat, lng])
+                .setContent(`<b>Registro Histórico</b><br>Velocidade: ${Math.round(speedKmh)} km/h`)
+                .openOn(map);
+        }
+
         async function loadHistory(headers) {
             if (!deviceId) return;
             try {
@@ -702,12 +710,20 @@
                 
                 if (positions.length === 0) {
                     histList.innerHTML = 'Nenhum trajeto gravado hoje.';
+                    polyline.setLatLngs([]);
                     return;
                 }
 
+                // --- DESENHAR O TRAJETO NO MAPA ---
+                // Agora pegamos TODAS as coordenadas de hoje para traçar o percurso real no mapa
+                const routeCoords = positions.map(p => [p.latitude, p.longitude]);
+                polyline.setLatLngs(routeCoords);
+                // ----------------------------------
+
                 histList.innerHTML = '';
 
-                const topPonto = positions.slice(-4).reverse();
+                // Pegando os últimos registros para não estourar a barra lateral
+                const topPonto = positions.slice(-10).reverse();
 
                 for (let i = 0; i < topPonto.length; i++) {
                     const p = topPonto[i];
@@ -715,8 +731,9 @@
                     
                     const itemId = `hist-item-${i}`;
                     
+                    // Adicionados atributos de cursor pointer e evento onclick
                     histList.innerHTML += `
-                        <div class="hist-item">
+                        <div class="hist-item" style="cursor: pointer;" onclick="focusHistoryPoint(${p.latitude}, ${p.longitude}, ${p.speed})">
                             <div class="hist-dot ${i === 0 ? 'recent' : ''}"></div>
                             <div class="hist-name" id="${itemId}">Buscando endereço...</div>
                             <div class="hist-time">${time}</div>
