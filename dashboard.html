@@ -5,207 +5,160 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Kappo Tracking</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
             --orange: #FF8C00;
-            --orange-dim: rgba(255,140,0,0.12);
             --orange-glow: rgba(255,140,0,0.4);
             --red: #FF3B3B;
+            --green: #00E07A;
             --bg: #0C0C0E;
             --glass-bg: rgba(255, 255, 255, 0.05); 
             --glass-border: rgba(255, 255, 255, 0.1);
             --text: #FFFFFF;
             --muted: rgba(255, 255, 255, 0.4);
-            --sidebar-w: 260px;
-            --sidebar-min-w: 80px;
+            --sidebar-w: 280px;
         }
 
-        html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; display: flex; }
 
-        /* Estrutura Principal */
-        .layout { display: flex; height: 100vh; width: 100vw; }
-
-        /* SIDEBAR GLASSMORPHISM */
+        /* Sidebar Estilo Glass */
         .sidebar {
-            width: var(--sidebar-w);
-            height: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid var(--glass-border);
-            display: flex;
-            flex-direction: column;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
-            position: relative;
+            width: var(--sidebar-w); background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; transition: 0.3s; z-index: 1000;
         }
 
-        /* Estado Minimizado */
-        .sidebar.minimized { width: var(--sidebar-min-w); }
+        .sidebar-header { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--glass-border); }
+        .logo-box { width: 35px; height: 35px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px var(--orange-glow); }
+        .brand-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 20px; color: var(--orange); }
 
-        /* Header da Sidebar */
-        .sidebar-header {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
+        .menu-label { padding: 20px 25px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 700; }
+        .menu-item { display: flex; align-items: center; padding: 12px 25px; color: #fff; text-decoration: none; transition: 0.3s; border-left: 3px solid transparent; }
+        .menu-item:hover, .menu-item.active { background: rgba(255, 140, 0, 0.1); border-left-color: var(--orange); }
+        .menu-item svg { width: 20px; margin-right: 15px; stroke: var(--orange); fill: none; stroke-width: 2; }
+
+        /* Painel de Alertas Inteligentes */
+        .alerts-panel { padding: 10px 25px; display: flex; flex-direction: column; gap: 12px; }
+        .alert-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #ddd; }
+        
+        /* Switch/Toggle Customizado */
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--orange); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* Botões de Comando */
+        .controls { padding: 20px 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { border: none; padding: 12px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 12px; text-transform: uppercase; }
+        .btn-lock { background: rgba(255, 59, 59, 0.2); color: var(--red); border: 1px solid var(--red); }
+        .btn-unlock { background: rgba(0, 224, 122, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+        /* Mapa */
+        .main-content { flex: 1; position: relative; }
+        #map { height: 100%; width: 100%; }
+
+        /* Overlay de Bloqueio Visual */
+        #lockOverlay {
+            position: absolute; inset: 0; background: rgba(255,0,0,0.15); backdrop-filter: blur(2px);
+            z-index: 500; display: none; align-items: center; justify-content: center; flex-direction: column;
         }
-        .logo-box {
-            min-width: 40px; height: 40px; background: var(--orange);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 15px var(--orange-glow);
-        }
-        .logo-box svg { width: 22px; fill: #000; }
-        .brand-text { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 1px; color: var(--orange); }
-
-        /* Divisores e Categorias */
-        .menu-divider { height: 1px; background: var(--glass-border); margin: 10px 20px; }
-        .menu-label {
-            padding: 15px 25px 5px;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            font-weight: 700;
-        }
-
-        /* Itens do Menu */
-        .menu-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 25px;
-            color: #fff;
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-            margin-bottom: 2px;
-        }
-        .menu-item:hover { background: rgba(255, 140, 0, 0.1); border-left-color: var(--orange); }
-        .menu-item i, .menu-item svg { min-width: 24px; color: var(--orange); margin-right: 15px; }
-        .menu-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
-
-        /* Esconder texto ao minimizar */
-        .sidebar.minimized .menu-text, 
-        .sidebar.minimized .brand-text,
-        .sidebar.minimized .menu-label { display: none; }
-        .sidebar.minimized .menu-item { justify-content: center; padding: 15px 0; }
-        .sidebar.minimized .menu-item i, .sidebar.minimized .menu-item svg { margin-right: 0; }
-
-        /* ÁREA DO MAPA */
-        .main-content { flex: 1; position: relative; display: flex; flex-direction: column; }
-        #map { flex: 1; z-index: 1; }
-
-        /* Widget de Velocidade (Igual à imagem) */
-        .speed-widget {
-            position: absolute; top: 20px; right: 20px; z-index: 100;
-            background: rgba(12, 12, 14, 0.8);
-            border: 1px solid var(--glass-border);
-            padding: 15px; border-radius: 12px; backdrop-filter: blur(10px);
-            text-align: center; min-width: 100px;
-        }
-        .speed-val { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; color: var(--orange); line-height: 1; }
-        .speed-unit { font-size: 10px; color: var(--muted); text-transform: uppercase; }
-
-        /* Alertas no Mapa */
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(255, 59, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); } }
-        .marker-alert { animation: pulse-red 1.5s infinite; background: var(--red) !important; }
+        .lock-msg { background: #000; padding: 20px; border-radius: 12px; border: 2px solid var(--red); color: #fff; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="layout">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header" onclick="toggleSidebar()">
-                <div class="logo-box">
-                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                </div>
-                <span class="brand-text">KAPPO</span>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-box"><svg viewBox="0 0 24 24" width="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+            <span class="brand-name">KAPPO</span>
+        </div>
+
+        <div class="menu-label">Monitoramento</div>
+        <a href="#" class="menu-item active">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Mapa em Tempo Real</span>
+        </a>
+
+        <div class="menu-label">Alertas Inteligentes</div>
+        <div class="alerts-panel">
+            <div class="alert-row">
+                <span>Cerca Eletrônica</span>
+                <label class="switch"><input type="checkbox" id="geofenceToggle" onchange="handleToggle('Cerca Eletrônica', this)"><span class="slider"></span></label>
             </div>
-
-            <div class="menu-divider"></div>
-
-            <div class="menu-label">Menu</div>
-            <a href="#" class="menu-item">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span class="menu-text">Dashboard</span>
-            </a>
-            <a href="#" class="menu-item">
-                <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span class="menu-text">Mapa Realtime</span>
-            </a>
-
-            <div class="menu-divider"></div>
-
-            <div class="menu-label">Monitoramento</div>
-            <a href="#" class="menu-item">
-                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span class="menu-text">Alertas Ativos</span>
-            </a>
-            <a href="#" class="menu-item">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span class="menu-text">Histórico</span>
-            </a>
-
-            <div class="menu-divider"></div>
-
-            <div class="menu-label">Configurações</div>
-            <a href="#" class="menu-item">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span class="menu-text">Dispositivos</span>
-            </a>
-            
-            <div style="margin-top: auto;">
-                <a href="#" class="menu-item" style="color: var(--red);">
-                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    <span class="menu-text">Sair</span>
-                </a>
+            <div class="alert-row">
+                <span>Ignição (ACC)</span>
+                <label class="switch"><input type="checkbox" id="ignitionToggle" onchange="handleToggle('Alerta de Ignição', this)" checked><span class="slider"></span></label>
             </div>
-        </aside>
-
-        <main class="main-content">
-            <div id="map"></div>
-            
-            <div class="speed-widget">
-                <div class="speed-val" id="speedDisplay">0</div>
-                <div class="speed-unit">km/h</div>
+            <div class="alert-row">
+                <span>Vibração</span>
+                <label class="switch"><input type="checkbox" id="shockToggle" onchange="handleToggle('Alerta de Vibração', this)"><span class="slider"></span></label>
             </div>
-        </main>
-    </div>
+        </div>
+
+        <div class="menu-label">Comandos Remotos</div>
+        <div class="controls">
+            <button class="btn btn-lock" onclick="sendControl('Bloquear')">Bloquear</button>
+            <button class="btn btn-unlock" onclick="sendControl('Liberar')">Liberar</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="lockOverlay">
+            <div class="lock-msg">
+                <h2 style="color: var(--red)">VEÍCULO BLOQUEADO</h2>
+                <p>O motor foi desligado remotamente.</p>
+            </div>
+        </div>
+        <div id="map"></div>
+    </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Função para Abrir/Fechar a Sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('minimized');
-            // Reajusta o mapa após a transição para não ficar torto
-            setTimeout(() => { map.invalidateSize(); }, 400);
+        // 1. Inicializar o Mapa
+        const map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        // Ícone do Veículo
+        const carIcon = L.divIcon({
+            className: '',
+            html: `<div id="carMarker" style="width:20px; height:20px; background:var(--orange); border:3px solid #fff; border-radius:50%; box-shadow: 0 0 15px var(--orange);"></div>`,
+            iconAnchor: [10, 10]
+        });
+        const marker = L.marker([-23.4332, -45.0711], { icon: carIcon }).addTo(map);
+
+        // 2. Função para os Interruptores de Alerta (Toggles)
+        function handleToggle(nomeAlerta, elemento) {
+            const status = elemento.checked ? "ATIVADO" : "DESATIVADO";
+            console.log(`Comando enviado ao Traccar: ${nomeAlerta} -> ${status}`);
+            
+            // Feedback visual rápido
+            alert(`${nomeAlerta} foi ${status} com sucesso no ST-901.`);
         }
 
-        // Inicialização do Mapa (Fundo Escuro)
-        var map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© Kappo Tracking'
-        }).addTo(map);
+        // 3. Função para Bloquear e Liberar (Comandos)
+        function sendControl(acao) {
+            const overlay = document.getElementById('lockOverlay');
+            const carMarker = document.getElementById('carMarker');
 
-        // Ícone Customizado para o Veículo (Cor Laranja da Kappo)
-        const kappoIcon = L.divIcon({
-            className: '',
-            html: `<div style="width:20px; height:20px; background:var(--orange); border:3px solid #fff; border-radius:50%; box-shadow: 0 0 15px var(--orange);"></div>`,
-            iconSize: [20, 20], iconAnchor: [10, 10]
-        });
-
-        const marker = L.marker([-23.4332, -45.0711], { icon: kappoIcon }).addTo(map);
-
-        // Simulação de Alerta (Pulsar Vermelho) - Exemplo de uso
-        function ativarAlerta() {
-            const iconElement = marker.getElement().querySelector('div');
-            iconElement.classList.add('marker-alert');
+            if (acao === 'Bloquear') {
+                if(confirm("Deseja realmente BLOQUEAR o motor do veículo?")) {
+                    overlay.style.display = 'flex';
+                    carMarker.style.background = 'var(--red)';
+                    carMarker.style.boxShadow = '0 0 20px var(--red)';
+                    console.log("Enviando comando: engineStop via Traccar API");
+                }
+            } else {
+                overlay.style.display = 'none';
+                carMarker.style.background = 'var(--orange)';
+                carMarker.style.boxShadow = '0 0 15px var(--orange)';
+                alert("Comando de LIBERAÇÃO enviado. O motor já pode ser ligado.");
+                console.log("Enviando comando: engineResume via Traccar API");
+            }
         }
     </script>
 </body>
