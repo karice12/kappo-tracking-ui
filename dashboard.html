@@ -5,266 +5,770 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Kappo Tracking</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
             --orange: #FF8C00;
             --orange-dim: rgba(255,140,0,0.12);
+            --orange-glow: rgba(255,140,0,0.25);
             --red: #FF3B3B;
+            --red-dim: rgba(255,59,59,0.12);
             --green: #00E07A;
+            --green-dim: rgba(0,224,122,0.12);
+            --cyan-glow: #00E5FF;
             --bg: #0C0C0E;
             --surface: #111114;
             --surface2: #18181D;
+            --surface3: #1F1F26;
             --border: rgba(255,255,255,0.06);
+            --border2: rgba(255,255,255,0.1);
             --text: #FFFFFF;
             --muted: #5A5A6E;
-            --sidebar-w: 320px;
+            --muted2: #8A8A9A;
+            --sidebar-w: 280px;
         }
 
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+
+        .topnav {
+            height: 56px; min-height: 56px;
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 200;
+        }
         
-        /* Topnav */
-        .topnav { height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
-        .brand { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 2px; font-size: 18px; }
+        .menu-btn { 
+            display: flex; align-items: center; justify-content: center; 
+            width: 36px; height: 36px; background: var(--surface2); 
+            border: 1px solid var(--border); border-radius: 10px; 
+            cursor: pointer; flex-shrink: 0; transition: all 0.2s; 
+        }
+        .menu-btn:hover { border-color: var(--border2); background: #202026; }
+        .burger-icon { 
+            width: 16px; height: 12px; display: flex; flex-direction: column; justify-content: space-between; 
+        }
+        .burger-line { 
+            height: 2px; width: 100%; background: #fff; border-radius: 2px; 
+            box-shadow: -1px 0 3px var(--cyan-glow), 1px 0 3px var(--orange); 
+            transition: all 0.3s ease;
+        }
+        
+        .topnav-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .brand-icon {
+            width: 34px; height: 34px; background: var(--orange); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px var(--orange-glow);
+        }
+        .brand-icon svg { width: 18px; height: 18px; fill: #000; }
+        .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+        .brand-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; display: none; }
+        @media(min-width:600px){ .brand-sub { display: block; } }
 
-        .layout { flex: 1; display: flex; position: relative; overflow: hidden; }
+        .topnav-spacer { flex: 1; }
 
-        /* Sidebar */
-        .sidebar { 
+        .nav-status { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
+        .status-dot.locked { background: var(--red); animation: none; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .status-label { font-size: 11px; color: var(--muted2); white-space: nowrap; }
+        .status-label.locked { color: var(--red); font-weight: bold; }
+
+        .nav-btn-action {
+            width: 34px; height: 34px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--muted2); transition: all 0.2s; flex-shrink: 0;
+        }
+        .nav-btn-action:hover { border-color: var(--border2); color: var(--text); }
+        .nav-btn-action svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .layout { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+        .sidebar {
             width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; overflow-y: auto; z-index: 900;
+            display: flex; flex-direction: column; z-index: 150; 
+            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), margin-left 0.35s cubic-bezier(0.4,0,0.2,1);
+            position: absolute; top: 0; bottom: 0; left: 0; overflow-y: auto; overflow-x: hidden;
+        }
+        .sidebar.closed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+
+        @media(min-width:900px){ 
+            .sidebar { position: relative; transform: none !important; margin-left: 0; } 
+            .sidebar.closed { margin-left: calc(-1 * var(--sidebar-w)); transform: none !important; }
         }
 
-        .section-title { padding: 15px 20px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border); background: var(--surface2); font-weight: 600; }
-        
-        /* --- NOVOS ESTILOS: STATUS E CONTROLES --- */
-        .vehicle-info { padding: 20px; border-bottom: 1px solid var(--border); }
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; color: var(--green); font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; }
-        .status-dot-pulse { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
-        
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .info-card { background: var(--surface2); border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
-        .info-label { display: block; font-size: 9px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
-        .info-value { display: block; font-family: 'Rajdhani'; font-weight: 600; font-size: 14px; }
-
-        .control-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn-control { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-family: 'Rajdhani'; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 12px; }
-        .btn-lock { background: rgba(255, 59, 59, 0.1); color: var(--red); border-color: rgba(255, 59, 59, 0.2); }
-        .btn-unlock { background: rgba(0, 224, 122, 0.1); color: var(--green); border-color: rgba(0, 224, 122, 0.2); }
-        .btn-lock:hover { background: var(--red); color: #fff; }
-        .btn-unlock:hover { background: var(--green); color: #fff; }
-
-        .alert-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .alert-item:last-child { border: none; }
-        .alert-label { font-size: 12px; color: rgba(255,255,255,0.8); }
-
-        /* Switch Toggle */
-        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2c2c2e; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--orange); }
-        input:checked + .slider:before { transform: translateX(16px); }
-
-        /* Estilos originais do histórico mantidos */
-        .history-filter { padding: 20px; border-bottom: 1px solid var(--border); }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
-        .input-group input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 6px; color-scheme: dark; }
-        .btn { flex: 1; padding: 12px; border-radius: 6px; font-weight: 700; font-family: 'Rajdhani'; font-size: 14px; text-transform: uppercase; cursor: pointer; border: none; }
-        .btn-search { background: var(--orange); color: #000; }
-        #historyItems { flex: 1; overflow-y: auto; }
-        .history-item { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .history-item-speed { font-size: 11px; color: var(--orange); font-family: 'Rajdhani'; font-weight: 700; }
-        
-        .map-container { flex: 1; position: relative; }
-        #map { height: 100%; width: 100%; background: var(--bg); }
-        .neon-route-glow { filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.8)); }
-
-        @media (max-width: 768px) {
-            .layout { flex-direction: column; }
-            .sidebar { width: 100%; height: 45vh; border-top: 1px solid var(--border); }
-            .map-container { height: 55vh; }
+        .sidebar-overlay {
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 140;
+            backdrop-filter: blur(2px);
         }
+        .sidebar-overlay.visible { display: block; }
+        @media(min-width:900px){ .sidebar-overlay { display: none !important; } }
+
+        .bike-card { padding: 12px; border-bottom: 1px solid var(--border); }
+        .bike-photo {
+            width: 100%; height: 80px; border-radius: 8px; overflow: hidden; margin-bottom: 8px;
+            background: var(--surface3);
+            background-image: url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=600');
+            background-size: cover; background-position: center;
+            position: relative;
+        }
+        .bike-photo::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%);
+        }
+        .bike-badge {
+            position: absolute; bottom: 6px; left: 6px; z-index: 1;
+            background: rgba(0,0,0,0.7); border: 1px solid var(--border2);
+            padding: 2px 6px; border-radius: 4px;
+            font-size: 8px; color: #fff; letter-spacing: 1px; text-transform: uppercase;
+            backdrop-filter: blur(8px);
+        }
+
+        .bike-name { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 20px; font-size: 9px; font-weight: 600;
+            letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;
+        }
+        .pill-green { background: var(--green-dim); color: var(--green); }
+        .pill-red { background: var(--red-dim); color: var(--red); }
+        .pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: blink 2s ease-in-out infinite; }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .detail-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px; }
+        .detail-box-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px; }
+        .detail-box-value { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: #ddd; }
+
+        .controls { padding: 12px; border-bottom: 1px solid var(--border); }
+        .controls-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ctrl-btn {
+            padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .ctrl-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .btn-lock { background: var(--red-dim); color: var(--red); border-color: rgba(255,59,59,0.2); }
+        .btn-lock:hover { background: rgba(255,59,59,0.2); }
+        .btn-unlock { background: var(--green-dim); color: var(--green); border-color: rgba(0,224,122,0.2); }
+        .btn-unlock:hover { background: rgba(0,224,122,0.2); }
+
+        .alerts-panel { padding: 12px; border-bottom: 1px solid var(--border); }
+        .alerts-title { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .alerts-title svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+        
+        .alert-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .alert-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .alert-label { font-size: 11px; color: var(--text); font-weight: 500; }
+        
+        .toggle-switch { position: relative; width: 34px; height: 18px; display: inline-block; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface3); transition: .3s; border-radius: 18px; border: 1px solid var(--border); }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: var(--muted); transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--orange-dim); border-color: var(--orange); }
+        input:checked + .slider:before { transform: translateX(16px); background-color: var(--orange); box-shadow: 0 0 8px var(--orange-glow); }
+
+        .stats-strip { padding: 12px; border-bottom: 1px solid var(--border); }
+        .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+        .stat-item:last-child { border-bottom: none; }
+        .stat-label { font-size: 10px; color: var(--muted2); }
+        .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: var(--orange); }
+
+        .history { padding: 12px; }
+        .history-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .hist-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .hist-item:last-child { border-bottom: none; }
+        .hist-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--surface3); border: 2px solid var(--muted); flex-shrink: 0; }
+        .hist-dot.recent { border-color: var(--orange); background: var(--orange-dim); }
+        .hist-name { font-size: 11px; color: var(--muted2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-time { font-size: 9px; color: var(--muted); font-family: 'Rajdhani', sans-serif; }
+
+        .map-area { flex: 1; position: relative; overflow: hidden; }
+        #map { position: absolute; inset: 0; z-index: 1; }
+
+        @keyframes alertMapPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.8); }
+            70% { box-shadow: 0 0 0 25px rgba(255, 59, 59, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
+        }
+
+        .lock-overlay {
+            position: absolute; inset: 0; z-index: 5;
+            background: rgba(40,0,0,0.55); display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px; text-align: center; backdrop-filter: grayscale(0.5) sepia(0.3);
+        }
+        .lock-overlay.visible { display: flex; }
+        .lock-icon { width: 64px; height: 64px; background: var(--red-dim); border: 1px solid rgba(255,59,59,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+        .lock-icon svg { width: 28px; height: 28px; stroke: var(--red); fill: none; stroke-width: 2; }
+        .lock-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; color: var(--red); letter-spacing: 1px; }
+        .lock-sub { font-size: 12px; color: var(--muted2); }
+
+        .speed-widget {
+            position: absolute; top: 12px; right: 12px; z-index: 10;
+            background: rgba(17,17,20,0.92); border: 1px solid var(--border2);
+            border-radius: 14px; padding: 12px 16px; min-width: 120px;
+            backdrop-filter: blur(16px); text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .speed-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
+        .speed-value { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700; color: var(--orange); line-height: 1; }
+        .speed-unit { font-size: 10px; color: var(--muted2); margin-top: 1px; }
+        .speed-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+        .speed-bar-fill { height: 100%; background: var(--orange); border-radius: 2px; width: 0%; transition: width 1s ease; }
+
+        .coord-chip {
+            position: absolute; bottom: 12px; right: 12px; z-index: 10;
+            background: rgba(17,17,20,0.92); border: 1px solid var(--border);
+            border-radius: 8px; padding: 6px 10px; backdrop-filter: blur(16px);
+            font-size: 9px; color: var(--muted2); font-family: 'Rajdhani', monospace; letter-spacing: 0.5px;
+        }
+        .coord-chip span { color: var(--orange); }
+
+        .mobile-bottombar {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+            background: rgba(17,17,20,0.95); border-top: 1px solid var(--border);
+            padding: 8px 12px; gap: 8px; backdrop-filter: blur(16px);
+        }
+        @media(max-width:899px){ .mobile-bottombar { display: flex; } }
+        .mbb-speed { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .mbb-speed-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+        .mbb-speed-val { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; color: var(--orange); line-height: 1.1; }
+        .mbb-btns { display: flex; gap: 6px; }
+        .mbb-btn {
+            padding: 8px 12px; border: none; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+        }
+        .mbb-lock { background: var(--red); color: #fff; }
+        .mbb-unlock { background: var(--green); color: #000; }
+
+        .leaflet-control-zoom { border: 1px solid var(--border) !important; border-radius: 8px !important; overflow: hidden; }
+        .leaflet-control-zoom a { background: var(--surface2) !important; color: var(--muted2) !important; border: none !important; transition: color 0.15s; }
+        .leaflet-control-zoom a:hover { color: var(--orange) !important; }
+
+        body.locked #map { filter: grayscale(0.8) sepia(0.4) hue-rotate(-30deg); }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
     <nav class="topnav">
-        <div class="brand">Kappo Tracking</div>
-        <div style="flex:1"></div>
-        <div id="connectionStatus" style="font-size: 10px; color: #00E07A; font-weight: 600;">
-            <span class="status-dot-pulse" style="display:inline-block; margin-right:6px;"></span>
-            SISTEMA ONLINE
+        <button class="menu-btn" onclick="toggleSidebar()" title="Alternar Menu Lateral">
+            <div class="burger-icon">
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+            </div>
+        </button>
+
+        <div class="topnav-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <div>
+                <div class="brand-name">Kappo</div>
+                <div class="brand-sub">Tracking System</div>
+            </div>
         </div>
+        <div class="topnav-spacer"></div>
+        <div class="nav-status" id="navStatus">
+            <div class="status-dot" id="navDot"></div>
+            <span class="status-label" id="navLabel">Conectando...</span>
+        </div>
+        <button class="nav-btn-action" title="Notificações" onclick="alert('Nenhuma notificação nova.')">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button class="nav-btn-action" title="Sair" onclick="logout()">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
     </nav>
 
     <div class="layout">
-        <aside class="sidebar" id="sidebar">
-            
-            <div class="section-title">Status do Veículo</div>
-            <div class="vehicle-info">
-                <div class="status-badge">
-                    <span class="status-dot-pulse"></span> Monitoramento Ativo
-                </div>
-                
-                <div class="info-grid">
-                    <div class="info-card">
-                        <span class="info-label">Ignição</span>
-                        <span class="info-value" style="color: var(--muted);">Desligada</span>
-                    </div>
-                    <div class="info-card">
-                        <span class="info-label">Sinal GPS</span>
-                        <span class="info-value" style="color: var(--green);">Forte</span>
-                    </div>
-                    <div class="info-card">
-                        <span class="info-label">Velocidade</span>
-                        <span class="info-value">0 km/h</span>
-                    </div>
-                    <div class="info-card">
-                        <span class="info-label">Bateria</span>
-                        <span class="info-value">12.8V</span>
-                    </div>
-                </div>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                <div class="control-group">
-                    <button class="btn-control btn-lock" onclick="alert('Comando Bloquear enviado')">Bloquear</button>
-                    <button class="btn-control btn-unlock" onclick="alert('Comando Liberar enviado')">Liberar</button>
+        <aside class="sidebar closed" id="sidebar">
+            <div class="bike-card">
+                <div class="bike-photo">
+                    <div class="bike-badge">Rastreador Kappo</div>
                 </div>
-
-                <div class="section-title" style="background:transparent; padding: 10px 0; border:none;">Alertas Inteligentes</div>
-                <div class="alert-list">
-                    <div class="alert-item">
-                        <span class="alert-label">Cerca Eletrônica</span>
-                        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                <div class="bike-name" id="vehicleName">Carregando...</div>
+                <div class="pill pill-green" id="statusPill">
+                    <div class="pill-dot"></div>
+                    Monitoramento Ativo
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-box">
+                        <div class="detail-box-label">HW</div>
+                        <div class="detail-box-value">Ativo</div>
                     </div>
-                    <div class="alert-item">
-                        <span class="alert-label">Alerta de Ignição</span>
-                        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                    <div class="detail-box">
+                        <div class="detail-box-label">Rede</div>
+                        <div class="detail-box-value">4G</div>
                     </div>
-                    <div class="alert-item">
-                        <span class="alert-label">Movimento Indevido</span>
-                        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                    <div class="detail-box">
+                        <div class="detail-box-label">ID</div>
+                        <div class="detail-box-value" id="idDevice">#</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-box-label">Bat</div>
+                        <div class="detail-box-value" id="sideBatery">-%</div>
                     </div>
                 </div>
             </div>
 
-            <div class="section-title">Filtro de Percurso</div>
-            <div class="history-filter">
-                <div class="input-group">
-                    <label>Início do Trajeto</label>
-                    <input type="datetime-local" id="dateFrom">
-                </div>
-                <div class="input-group">
-                    <label>Fim do Trajeto</label>
-                    <input type="datetime-local" id="dateTo">
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-search" id="btnVisualizar" onclick="loadHistory()">Visualizar Rota</button>
-                    <button class="btn" style="background: var(--surface2); color: var(--muted);" onclick="clearMap()">Limpar</button>
+            <div class="controls">
+                <div class="controls-title">Controles</div>
+                <div class="btn-row">
+                    <button class="ctrl-btn btn-lock" onclick="sendCommandToBike('engineStop')">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        Bloquear
+                    </button>
+                    <button class="ctrl-btn btn-unlock" onclick="sendCommandToBike('engineResume')">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                        Liberar
+                    </button>
                 </div>
             </div>
 
-            <div class="section-title">Pontos de Registro</div>
-            <div id="historyItems">
-                <div id="emptyState" style="padding: 30px 20px; text-align: center; color: var(--muted); font-size: 13px;">
-                    Selecione um período para ver o histórico.
+            <div class="alerts-panel">
+                <div class="alerts-title">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Alertas Inteligentes
                 </div>
+                <div class="alert-row">
+                    <span class="alert-label">Cerca Eletrônica (Geofence)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-geofence" onchange="updateAlertConfig('geofence', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="alert-row">
+                    <span class="alert-label">Alerta de Ignição (ACC)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-acc" checked onchange="updateAlertConfig('acc', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="alert-row">
+                    <span class="alert-label">Alerta de Vibração/Choque</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-vib" onchange="updateAlertConfig('vibration', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="alert-row">
+                    <span class="alert-label">Alerta de Desconexão (Cut)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-cut" checked onchange="updateAlertConfig('powerCut', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="stats-strip">
+                <div class="stat-item">
+                    <span class="stat-label">Velocidade atual</span>
+                    <span class="stat-value" id="sideSpeed">— km/h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Distância hoje</span>
+                    <span class="stat-value" id="sideDistance">0 km</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sinal GPS</span>
+                    <span class="stat-value" id="sideSignal" style="color:var(--green)">Forte</span>
+                </div>
+            </div>
+
+            <div class="history">
+                <div class="history-title">🕒 Histórico de Locais</div>
+                <div id="historyList">Carregando histórico...</div>
             </div>
         </aside>
 
-        <main class="map-container">
+        <div class="map-area">
             <div id="map"></div>
-        </main>
+
+            <div class="lock-overlay" id="lockOverlay">
+                <div class="lock-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div class="lock-title">Motor Bloqueado</div>
+                <div class="lock-sub">Veículo imobilizado remotamente</div>
+            </div>
+
+            <div class="speed-widget" id="speedWidget">
+                <div class="speed-label">Velocidade</div>
+                <div class="speed-value" id="speedVal">0</div>
+                <div class="speed-unit">km/h</div>
+                <div class="speed-bar"><div class="speed-bar-fill" id="speedBar"></div></div>
+            </div>
+
+            <div class="coord-chip" id="coordChip">
+                <span id="coordLat">-23.4332</span>, <span id="coordLng">-45.0711</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-bottombar">
+        <div class="mbb-speed">
+            <div class="mbb-speed-label">Velocidade</div>
+            <div class="mbb-speed-val" id="mbbSpeed">0 km/h</div>
+        </div>
+        <div class="mbb-btns">
+            <button class="mbb-btn mbb-lock" onclick="sendCommandToBike('engineStop')">🔒 Bloquear</button>
+            <button class="mbb-btn mbb-unlock" onclick="sendCommandToBike('engineResume')">🔓 Liberar</button>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const TRACCAR_URL = 'https://api.kappotracking.com.br';
-        let map, marker, routeLine;
+        const TRACCAR_URL = 'https://api.kappotracking.com.br'; 
         let deviceId = null;
+        let traccarSocket = null;
 
-        const user = JSON.parse(localStorage.getItem('kappo_user'));
-        const auth = 'Basic ' + btoa(user.email + ':kappo123');
-
-        map = L.map('map', { zoomControl: false }).setView([-23.4332, -45.0711], 14);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-        const kappoIcon = L.divIcon({
-            className: 'custom-div-icon',
-            html: `<div style="background-color: var(--orange); width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 15px var(--orange);"></div>`,
-            iconSize: [14, 14], iconAnchor: [7, 7]
-        });
-
-        async function init() {
-            try {
-                const res = await fetch(`${TRACCAR_URL}/api/devices`, { headers: { 'Authorization': auth } });
-                const devices = await res.json();
-                if (devices.length > 0) {
-                    deviceId = devices[0].id;
-                    fetchLiveLocation();
-                }
-            } catch (e) { console.error(e); }
+        const loggedUser = JSON.parse(localStorage.getItem('kappo_user'));
+        if (!loggedUser || !loggedUser.email) {
+            window.location.href = 'index.html';
         }
 
-        async function fetchLiveLocation() {
-            try {
-                const res = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers: { 'Authorization': auth } });
-                const data = await res.json();
-                if (data.length > 0) {
-                    const pos = data[0];
-                    const latlng = [pos.latitude, pos.longitude];
-                    if (!marker) {
-                        marker = L.marker(latlng, { icon: kappoIcon }).addTo(map);
-                        map.setView(latlng, 16);
-                    } else {
-                        marker.setLatLng(latlng);
-                    }
-                }
-            } catch(e) {}
-            setTimeout(fetchLiveLocation, 5000);
+        function logout() {
+            localStorage.removeItem('kappo_user');
+            window.location.href = 'index.html';
         }
 
-        async function loadHistory() {
-            const from = new Date(document.getElementById('dateFrom').value).toISOString();
-            const to = new Date(document.getElementById('dateTo').value).toISOString();
-            const btn = document.getElementById('btnVisualizar');
-            btn.textContent = "Buscando...";
-
-            try {
-                const res = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}&from=${from}&to=${to}`, { headers: { 'Authorization': auth } });
-                const positions = await res.json();
-                if (positions.length === 0) { alert("Sem rotas"); return; }
-
-                if (routeLine) map.removeLayer(routeLine);
-                const pathCoords = positions.map(p => [p.latitude, p.longitude]);
-                routeLine = L.polyline(pathCoords, { color: '#FF8C00', weight: 3, className: 'neon-route-glow' }).addTo(map);
-                map.fitBounds(routeLine.getBounds());
-                renderHistoryList(positions);
-            } catch (e) { alert("Erro ao carregar"); }
-            finally { btn.textContent = "Visualizar Rota"; }
+        function getAuthHeaders() {
+            const userEmail = loggedUser.email;
+            const userPass = 'kappo123'; 
+            const credentials = btoa(`${userEmail}:${userPass}`);
+            return {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/json'
+            };
         }
 
-        function renderHistoryList(positions) {
-            const container = document.getElementById('historyItems');
-            container.innerHTML = '';
-            positions.slice(-20).reverse().forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `<span>${new Date(p.deviceTime).toLocaleTimeString()}</span><span class="history-item-speed">${Math.round(p.speed * 1.852)} km/h</span>`;
-                div.onclick = () => map.setView([p.latitude, p.longitude], 18);
-                container.appendChild(div);
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('closed');
+            
+            if (window.innerWidth < 900) {
+                ov.classList.toggle('visible');
+            }
+            
+            setTimeout(() => map.invalidateSize(), 360);
+        }
+
+        function handleResize() {
+            const ov = document.getElementById('sidebarOverlay');
+            if (window.innerWidth >= 900) {
+                ov.classList.remove('visible'); 
+            }
+            map.invalidateSize();
+        }
+        window.addEventListener('resize', handleResize);
+
+        var map = L.map('map', { zoomControl: true }).setView([-23.4332, -45.0711], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB',
+            maxZoom: 19
+        }).addTo(map);
+
+        function makeIcon(color, isAlert = false) {
+            const animationStyle = isAlert ? 'animation: alertMapPulse 1.5s infinite;' : '';
+            return L.divIcon({
+                className: '',
+                html: `<div style="
+                    width:16px; height:16px; border-radius:50%;
+                    background:${color}; border:2px solid rgba(255,255,255,0.8);
+                    box-shadow: 0 0 16px ${color}, 0 0 32px ${color}40;
+                    transition: all 0.5s ease;
+                    ${animationStyle}
+                "></div>`,
+                iconSize: [16, 16], iconAnchor: [8, 8]
             });
         }
 
-        function clearMap() {
-            if (routeLine) map.removeLayer(routeLine);
-            document.getElementById('historyItems').innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">Histórico limpo.</div>';
+        var marker = L.marker([-23.4332, -45.0711], { icon: makeIcon('#FF8C00') }).addTo(map);
+        var polyline = L.polyline([], { color: '#FF8C00', opacity: 0.4, weight: 2, dashArray: '6,8' }).addTo(map);
+        var trail = [];
+
+        function updateSpeedUI(kmh) {
+            const speed = Math.round(kmh);
+            document.getElementById('speedVal').textContent = speed;
+            document.getElementById('mbbSpeed').textContent = speed + ' km/h';
+            document.getElementById('sideSpeed').textContent = speed + ' km/h';
+            document.getElementById('speedBar').style.width = Math.min(speed / 40 * 100, 100) + '%';
         }
 
-        init();
+        function setLockedUI(lock) {
+            const body = document.getElementById('mainBody');
+            const pill = document.getElementById('statusPill');
+            const navDot = document.getElementById('navDot');
+            const navLabel = document.getElementById('navLabel');
+            const overlay = document.getElementById('lockOverlay');
+
+            if (lock) {
+                body.classList.add('locked');
+                pill.className = 'pill pill-red';
+                pill.innerHTML = '<div class="pill-dot"></div>Motor Bloqueado';
+                navDot.className = 'status-dot locked';
+                navLabel.textContent = 'Motor bloqueado';
+                navLabel.className = 'status-label locked';
+                overlay.classList.add('visible');
+                marker.setIcon(makeIcon('#FF3B3B'));
+                updateSpeedUI(0);
+            } else {
+                body.classList.remove('locked');
+                pill.className = 'pill pill-green';
+                pill.innerHTML = '<div class="pill-dot"></div>Monitoramento Ativo';
+                navDot.className = 'status-dot';
+                navLabel.textContent = 'Monitoramento ativo';
+                navLabel.className = 'status-label';
+                overlay.classList.remove('visible');
+                marker.setIcon(makeIcon('#FF8C00'));
+            }
+        }
+
+        // --- SISTEMA DE ALERTAS INTELIGENTES ---
+
+        function loadAlertPreferences() {
+            const savedPrefs = JSON.parse(localStorage.getItem('kappo_alerts')) || {
+                geofence: false,
+                acc: true,
+                vibration: false,
+                powerCut: true
+            };
+            
+            document.getElementById('toggle-geofence').checked = savedPrefs.geofence;
+            document.getElementById('toggle-acc').checked = savedPrefs.acc;
+            document.getElementById('toggle-vib').checked = savedPrefs.vibration;
+            document.getElementById('toggle-cut').checked = savedPrefs.powerCut;
+        }
+
+        function updateAlertConfig(type, isEnabled) {
+            const prefs = JSON.parse(localStorage.getItem('kappo_alerts')) || {};
+            prefs[type] = isEnabled;
+            localStorage.setItem('kappo_alerts', JSON.stringify(prefs));
+            console.log(`Configuração salva: Alerta [${type}] definido como ${isEnabled}`);
+        }
+
+        function triggerVisualAlert(alertMessage) {
+            // Faz o ponto do mapa pulsar em vermelho
+            marker.setIcon(makeIcon('#FF3B3B', true));
+            
+            // Atualiza a barra do topo com a mensagem
+            const navDot = document.getElementById('navDot');
+            const navLabel = document.getElementById('navLabel');
+            navDot.className = 'status-dot locked'; 
+            navLabel.textContent = `⚠️ ${alertMessage}`;
+            navLabel.className = 'status-label locked';
+
+            // Retorna ao normal após 10 segundos
+            setTimeout(() => {
+                if(!document.getElementById('mainBody').classList.contains('locked')) {
+                    marker.setIcon(makeIcon('#FF8C00', false));
+                    navDot.className = 'status-dot';
+                    navLabel.textContent = 'Monitoramento ativo';
+                    navLabel.className = 'status-label';
+                }
+            }, 10000);
+        }
+
+        function connectTraccarEvents() {
+            const wsUrl = TRACCAR_URL.replace('http', 'ws') + '/api/socket';
+            
+            traccarSocket = new WebSocket(wsUrl);
+
+            traccarSocket.onopen = function () {
+                console.log("🟢 Conectado ao WebSocket do Traccar. Sistema de alertas pronto.");
+            };
+
+            traccarSocket.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.events) {
+                    data.events.forEach(e => {
+                        // Verifica se o evento pertence ao aparelho selecionado
+                        if (e.deviceId === deviceId) {
+                            
+                            // Lógica para disparar os alertas visuais se o botão estiver ativado
+                            if (e.type === 'ignitionOn' && document.getElementById('toggle-acc').checked) {
+                                triggerVisualAlert('Motor Ligado (ACC)!');
+                            }
+                            else if (e.type === 'alarm' && document.getElementById('toggle-vib').checked) {
+                                triggerVisualAlert('Vibração / Movimento Detectado!');
+                            }
+                            else if (e.type === 'powerCut' && document.getElementById('toggle-cut').checked) {
+                                triggerVisualAlert('ENERGIA CORTADA! Verifique o veículo imediatamente.');
+                            }
+                            else if ((e.type === 'geofenceEnter' || e.type === 'geofenceExit') && document.getElementById('toggle-geofence').checked) {
+                                triggerVisualAlert('Violação de Cerca Eletrônica!');
+                            }
+                        }
+                    });
+                }
+            };
+
+            traccarSocket.onclose = function () {
+                console.log("🔴 Conexão de alertas perdida. Tentando reconectar em 5 segundos...");
+                setTimeout(connectTraccarEvents, 5000);
+            };
+        }
+
+        // --- FIM DO SISTEMA DE ALERTAS ---
+
+        async function fetchSystemData() {
+            try {
+                const headers = getAuthHeaders();
+
+                const devicesResponse = await fetch(`${TRACCAR_URL}/api/devices`, { headers });
+                if (!devicesResponse.ok) throw new Error("Erro ao buscar aparelhos.");
+                
+                const devices = await devicesResponse.json();
+                
+                if (devices.length === 0) {
+                    return;
+                }
+
+                const dev = devices[0];
+                deviceId = dev.id;
+                document.getElementById('idDevice').textContent = dev.id;
+                document.getElementById('vehicleName').textContent = dev.name;
+
+                const positionsResponse = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
+                if (!positionsResponse.ok) throw new Error("Erro ao buscar posições.");
+
+                const positions = await positionsResponse.json();
+
+                if (positions.length > 0) {
+                    const pos = positions[positions.length - 1]; 
+                    
+                    document.getElementById('coordLat').textContent = pos.latitude.toFixed(4);
+                    document.getElementById('coordLng').textContent = pos.longitude.toFixed(4);
+                    
+                    const latlng = [pos.latitude, pos.longitude];
+                    marker.setLatLng(latlng);
+                    map.panTo(latlng);
+
+                    trail.push(latlng);
+                    if (trail.length > 20) trail.shift();
+                    polyline.setLatLngs(trail);
+
+                    const speedKmh = pos.speed * 1.852; 
+                    updateSpeedUI(speedKmh);
+
+                    if (pos.attributes && pos.attributes.batteryLevel) {
+                        document.getElementById('sideBatery').textContent = pos.attributes.batteryLevel + '%';
+                    } else if (pos.attributes && pos.attributes.battery) {
+                         document.getElementById('sideBatery').textContent = pos.attributes.battery + '%';
+                    }
+                }
+                
+                if(!document.getElementById('navDot').classList.contains('locked')) {
+                    document.getElementById('navLabel').textContent = 'Monitoramento ativo';
+                }
+                loadHistory(headers);
+
+            } catch (error) {
+                console.error("Erro no sincronismo:", error);
+                document.getElementById('navLabel').textContent = 'Erro de sincronismo';
+            }
+        }
+
+        async function getAddressName(lat, lng) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+                    headers: { 'Accept-Language': 'pt-BR' }
+                });
+                const data = await response.json();
+                if (data && data.address) {
+                    return data.address.road || data.address.suburb || data.address.city || "Ubatuba, SP";
+                }
+                return `Ponto não identificado`;
+            } catch {
+                return `Rua não identificada`;
+            }
+        }
+
+        async function loadHistory(headers) {
+            if (!deviceId) return;
+            try {
+                const response = await fetch(`${TRACCAR_URL}/api/positions?deviceId=${deviceId}`, { headers });
+                const positions = await response.json();
+                
+                const histList = document.getElementById('historyList');
+                
+                if (positions.length === 0) {
+                    histList.innerHTML = 'Nenhum trajeto gravado hoje.';
+                    return;
+                }
+
+                histList.innerHTML = '';
+
+                const topPonto = positions.slice(-4).reverse();
+
+                for (let i = 0; i < topPonto.length; i++) {
+                    const p = topPonto[i];
+                    const time = new Date(p.fixTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    const itemId = `hist-item-${i}`;
+                    
+                    histList.innerHTML += `
+                        <div class="hist-item">
+                            <div class="hist-dot ${i === 0 ? 'recent' : ''}"></div>
+                            <div class="hist-name" id="${itemId}">Buscando endereço...</div>
+                            <div class="hist-time">${time}</div>
+                        </div>
+                    `;
+
+                    getAddressName(p.latitude, p.longitude).then(street => {
+                        const label = document.getElementById(itemId);
+                        if (label) {
+                            label.textContent = street;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log("Erro ao carregar histórico");
+            }
+        }
+
+        async function sendCommandToBike(type) {
+            if (!deviceId) {
+                alert("Aparelho não sincronizado!");
+                return;
+            }
+
+            setLockedUI(type === 'engineStop');
+
+            try {
+                const headers = getAuthHeaders();
+
+                const response = await fetch(`${TRACCAR_URL}/api/commands/send`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        deviceId: deviceId,
+                        type: type 
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Não foi possível enviar comando ao rastreador.");
+                }
+            } catch (error) {
+                alert(error.message);
+                setLockedUI(false);
+            }
+        }
+
+        handleResize();
+        loadAlertPreferences(); 
+        connectTraccarEvents();
+        fetchSystemData();
+        setInterval(fetchSystemData, 5000); 
     </script>
 </body>
 </html>
